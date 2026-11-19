@@ -35,14 +35,14 @@ function worldFixture(t, setup = setupWorld) {
   }
   return {
     db,
-    request(actor, body) {
+    async request(actor, body) {
       const account =
         actor &&
         publicAccount(
           db.prepare("SELECT * FROM accounts WHERE id = ?").get(actor),
         );
       let response;
-      const handled = handleWorld({
+      const handled = await handleWorld({
         req: { method: body ? "POST" : "GET" },
         path: "/api/world",
         account,
@@ -59,7 +59,7 @@ function worldFixture(t, setup = setupWorld) {
   };
 }
 
-test("the world restricts administration and saves assignments, submissions and feedback", (t) => {
+test("the world restricts administration and saves assignments, submissions and feedback", async (t) => {
   const { request } = worldFixture(t);
   const quest = {
     id: "task-1",
@@ -69,23 +69,25 @@ test("the world restricts administration and saves assignments, submissions and 
     plus: 10,
     minus: 4,
   };
-  assert.throws(() => request(null), { code: "unauthenticated" });
-  assert.throws(() => request("unready"), { code: "onboarding_required" });
-  assert.throws(() => request("alex", { action: "quest", quest }), {
+  await assert.rejects(() => request(null), { code: "unauthenticated" });
+  await assert.rejects(() => request("unready"), {
+    code: "onboarding_required",
+  });
+  await assert.rejects(() => request("alex", { action: "quest", quest }), {
     code: "forbidden",
   });
-  request("admin", { action: "quest", quest });
-  assert.throws(
+  await request("admin", { action: "quest", quest });
+  await assert.rejects(
     () =>
       request("casey", { action: "submit", id: quest.id, text: "Not mine." }),
     { code: "forbidden" },
   );
-  request("alex", {
+  await request("alex", {
     action: "submit",
     id: quest.id,
     text: "My private submission.",
   });
-  assert.throws(
+  await assert.rejects(
     () =>
       request("alex", {
         action: "review",
@@ -95,7 +97,7 @@ test("the world restricts administration and saves assignments, submissions and 
       }),
     { code: "forbidden" },
   );
-  const { game } = request("admin", {
+  const { game } = await request("admin", {
     action: "review",
     id: quest.id,
     passed: true,
@@ -103,15 +105,15 @@ test("the world restricts administration and saves assignments, submissions and 
   });
   assert.equal(game.quests[0].state, "Behaald");
   assert.equal(game.quests[0].evidence, "My private submission.");
-  assert.equal(request("alex").game.quests[0].feedback, "Well done.");
-  const [publicQuest] = request("casey").game.quests;
+  assert.equal((await request("alex")).game.quests[0].feedback, "Well done.");
+  const [publicQuest] = (await request("casey")).game.quests;
   assert.equal(publicQuest.name, "Practice");
   assert.equal(publicQuest.desc, undefined);
   assert.equal(publicQuest.evidence, undefined);
   assert.equal(publicQuest.feedback, undefined);
 });
 
-test("only the owner can read private profiles and the GM can read explicitly shared goals", (t) => {
+test("only the owner can read private profiles and the GM can read explicitly shared goals", async (t) => {
   const { db, request } = worldFixture(t);
   const goal = {
     id: "goal-1",
@@ -131,38 +133,41 @@ test("only the owner can read private profiles and the GM can read explicitly sh
     goals: [goal],
     activeGoal: goal.id,
   };
-  request("alex", { action: "journey", journey });
-  const alex = (actor) =>
-    request(actor).game.players.find((player) => player.id === "alex");
-  assert.deepEqual(alex("alex").journey.typeScores, [3, 1, -4, 0]);
-  assert.deepEqual(alex("alex").journey.prefs, [2, 2, 2, 2]);
-  assert.deepEqual(alex("casey").journey, { house: "nacht", goals: [] });
-  assert.deepEqual(alex("admin").journey, {
+  await request("alex", { action: "journey", journey });
+  const alex = async (actor) =>
+    (await request(actor)).game.players.find((player) => player.id === "alex");
+  assert.deepEqual((await alex("alex")).journey.typeScores, [3, 1, -4, 0]);
+  assert.deepEqual((await alex("alex")).journey.prefs, [2, 2, 2, 2]);
+  assert.deepEqual((await alex("casey")).journey, {
+    house: "nacht",
+    goals: [],
+  });
+  assert.deepEqual((await alex("admin")).journey, {
     house: "nacht",
     goals: [
       { id: "goal-1", text: "My goal", action: "Practice", shared: true },
     ],
   });
-  assert.equal(alex("admin").email, undefined);
-  assert.equal(alex("admin").profile, undefined);
+  assert.equal((await alex("admin")).email, undefined);
+  assert.equal((await alex("admin")).profile, undefined);
   const updateScores = db.prepare(
     "UPDATE accounts SET type_scores = ? WHERE id = 'alex'",
   );
   updateScores.run("[3,1,-4,0,12]");
-  assert.deepEqual(alex("alex").journey.typeScores, [3, 1, -4, 0, 12]);
-  assert.deepEqual(alex("alex").journey.prefs, [2, 2, 2, 2]);
+  assert.deepEqual((await alex("alex")).journey.typeScores, [3, 1, -4, 0, 12]);
+  assert.deepEqual((await alex("alex")).journey.prefs, [2, 2, 2, 2]);
   updateScores.run("[3,1,-4,0,-5]");
-  assert.deepEqual(alex("alex").journey.prefs, [2, 2, 2, 2]);
+  assert.deepEqual((await alex("alex")).journey.prefs, [2, 2, 2, 2]);
 
   updateScores.run("[-1,-2,3,4,-5]");
-  assert.deepEqual(alex("alex").journey.typeScores, [-1, -2, 3, 4, -5]);
-  assert.deepEqual(alex("alex").journey.prefs, [1, 1, 0, 0]);
-  const first = request("alex", {
+  assert.deepEqual((await alex("alex")).journey.typeScores, [-1, -2, 3, 4, -5]);
+  assert.deepEqual((await alex("alex")).journey.prefs, [1, 1, 0, 0]);
+  const first = await request("alex", {
     action: "exercise",
     id: "exercise-1",
     goalId: goal.id,
   });
-  const repeat = request("alex", {
+  const repeat = await request("alex", {
     action: "exercise",
     id: "exercise-2",
     goalId: goal.id,
@@ -171,36 +176,41 @@ test("only the owner can read private profiles and the GM can read explicitly sh
   assert.equal(repeat.questId, first.questId);
   assert.equal(repeat.game.quests.length, 1);
   assert.ok(repeat.game.quests[0].privateSteps.includes("Practice"));
-  assert.equal(request("admin").game.quests[0].privateSteps, undefined);
+  assert.equal((await request("admin")).game.quests[0].privateSteps, undefined);
 });
 
-test("likes retain the public count without exposing which other accounts voted", (t) => {
+test("likes retain the public count without exposing which other accounts voted", async (t) => {
   const { request } = worldFixture(t);
-  request("admin", { action: "post", id: "post-1", text: "Welcome" });
-  request("alex", { action: "like", id: "post-1" });
-  request("casey", { action: "like", id: "post-1" });
-  const [post] = request("alex").game.posts;
+  await request("admin", { action: "post", id: "post-1", text: "Welcome" });
+  await Promise.all([
+    request("alex", { action: "like", id: "post-1" }),
+    request("casey", { action: "like", id: "post-1" }),
+  ]);
+  const [post] = (await request("alex")).game.posts;
   assert.deepEqual(post.votes, { alex: true });
   assert.equal(post.likes, 1);
   assert.equal(post.playerId, "gm");
-  const [after] = request("alex", { action: "like", id: "post-1" }).game.posts;
+  const [after] = (await request("alex", { action: "like", id: "post-1" })).game
+    .posts;
   assert.deepEqual(after.votes, {});
   assert.equal(after.likes, 1);
 });
 
-test("an unfinished draft stays private, can be edited, and is removed when assigned", (t) => {
+test("an unfinished draft stays private, can be edited, and is removed when assigned", async (t) => {
   const { request } = worldFixture(t);
   const draft = { id: "draft-1", playerId: null, name: "Follow the thread" };
-  assert.throws(
+  await assert.rejects(
     () => request("alex", { action: "saveQuestDraft", quest: draft }),
     {
       code: "forbidden",
     },
   );
-  const saved = request("admin", {
-    action: "saveQuestDraft",
-    quest: draft,
-  }).game;
+  const saved = (
+    await request("admin", {
+      action: "saveQuestDraft",
+      quest: draft,
+    })
+  ).game;
   assert.deepEqual(saved.questDrafts, [
     {
       ...draft,
@@ -213,11 +223,11 @@ test("an unfinished draft stays private, can be edited, and is removed when assi
     },
   ]);
   assert.equal(saved.quests.length, 0);
-  assert.equal(request("alex").game.questDrafts, undefined);
-  assert.deepEqual(request("other-admin").game.questDrafts, []);
-  request("other-admin", { action: "deleteQuestDraft", id: draft.id });
-  assert.equal(request("admin").game.questDrafts.length, 1);
-  assert.throws(
+  assert.equal((await request("alex")).game.questDrafts, undefined);
+  assert.deepEqual((await request("other-admin")).game.questDrafts, []);
+  await request("other-admin", { action: "deleteQuestDraft", id: draft.id });
+  assert.equal((await request("admin")).game.questDrafts.length, 1);
+  await assert.rejects(
     () => request("other-admin", { action: "saveQuestDraft", quest: draft }),
     {
       code: "conflict",
@@ -232,9 +242,9 @@ test("an unfinished draft stays private, can be edited, and is removed when assi
     completionCriteria:
       "The question follows up on what the other person said.",
   };
-  request("admin", { action: "saveQuestDraft", quest });
-  assert.deepEqual(request("admin").game.questDrafts, [quest]);
-  assert.throws(
+  await request("admin", { action: "saveQuestDraft", quest });
+  assert.deepEqual((await request("admin")).game.questDrafts, [quest]);
+  await assert.rejects(
     () =>
       request("admin", {
         action: "quest",
@@ -242,30 +252,39 @@ test("an unfinished draft stays private, can be edited, and is removed when assi
       }),
     { code: "invalid_input" },
   );
-  assert.deepEqual(request("admin").game.questDrafts, [quest]);
-  assert.throws(() => request("other-admin", { action: "quest", quest }), {
-    code: "conflict",
-  });
+  assert.deepEqual((await request("admin")).game.questDrafts, [quest]);
+  await assert.rejects(
+    () => request("other-admin", { action: "quest", quest }),
+    {
+      code: "conflict",
+    },
+  );
 
-  const assigned = request("admin", { action: "quest", quest });
+  const assigned = await request("admin", { action: "quest", quest });
   assert.equal(assigned.questId, quest.id);
   assert.deepEqual(assigned.game.questDrafts, []);
   assert.equal(assigned.game.quests.length, 1);
   assert.equal(
-    request("alex").game.quests[0].submissionPrompt,
+    (await request("alex")).game.quests[0].submissionPrompt,
     quest.submissionPrompt,
   );
   assert.equal(
-    request("alex").game.quests[0].completionCriteria,
+    (await request("alex")).game.quests[0].completionCriteria,
     quest.completionCriteria,
   );
-  assert.equal(request("casey").game.quests[0].submissionPrompt, undefined);
-  assert.equal(request("casey").game.quests[0].completionCriteria, undefined);
   assert.equal(
-    request("admin", { action: "quest", quest }).game.quests.length,
+    (await request("casey")).game.quests[0].submissionPrompt,
+    undefined,
+  );
+  assert.equal(
+    (await request("casey")).game.quests[0].completionCriteria,
+    undefined,
+  );
+  assert.equal(
+    (await request("admin", { action: "quest", quest })).game.quests.length,
     1,
   );
-  assert.throws(
+  await assert.rejects(
     () =>
       request("admin", {
         action: "quest",
@@ -275,7 +294,7 @@ test("an unfinished draft stays private, can be edited, and is removed when assi
   );
 });
 
-test("an assignment can link only to a currently shared goal of the recipient", (t) => {
+test("an assignment can link only to a currently shared goal of the recipient", async (t) => {
   const { request } = worldFixture(t);
   const goal = {
     id: "practice-listening",
@@ -293,7 +312,7 @@ test("an assignment can link only to a currently shared goal of the recipient", 
     activeGoal: goal.id,
     goals: [goal],
   };
-  request("alex", { action: "journey", journey });
+  await request("alex", { action: "journey", journey });
   const quest = {
     id: "assigned",
     playerId: "alex",
@@ -305,7 +324,7 @@ test("an assignment can link only to a currently shared goal of the recipient", 
     plus: 10,
     minus: 2,
   };
-  assert.throws(
+  await assert.rejects(
     () =>
       request("admin", {
         action: "quest",
@@ -314,31 +333,33 @@ test("an assignment can link only to a currently shared goal of the recipient", 
     { code: "conflict" },
   );
 
-  request("admin", { action: "saveQuestDraft", quest });
-  request("alex", {
+  await request("admin", { action: "saveQuestDraft", quest });
+  await request("alex", {
     action: "journey",
     journey: { ...journey, goals: [{ ...goal, shared: false }] },
   });
-  assert.throws(() => request("admin", { action: "quest", quest }), {
+  await assert.rejects(() => request("admin", { action: "quest", quest }), {
     code: "conflict",
   });
-  assert.deepEqual(request("admin").game.questDrafts, [quest]);
-  assert.equal(request("admin").game.quests.length, 0);
-  request("alex", { action: "journey", journey });
-  const { game } = request("admin", { action: "quest", quest });
+  assert.deepEqual((await request("admin")).game.questDrafts, [quest]);
+  assert.equal((await request("admin")).game.quests.length, 0);
+  await request("alex", { action: "journey", journey });
+  const { game } = await request("admin", { action: "quest", quest });
   assert.equal(game.quests[0].sharedGoalId, goal.id);
-  assert.equal(request("alex").game.quests[0].sharedGoalId, undefined);
+  assert.equal((await request("alex")).game.quests[0].sharedGoalId, undefined);
   assert.equal(
-    request("alex", {
-      action: "exercise",
-      id: "exercise-1",
-      goalId: goal.id,
-    }).questId,
+    (
+      await request("alex", {
+        action: "exercise",
+        id: "exercise-1",
+        goalId: goal.id,
+      })
+    ).questId,
     "exercise-1",
   );
 });
 
-test("opening a previous world updates the schema and preserves its quests", (t) => {
+test("opening a previous world updates the schema and preserves its quests", async (t) => {
   const { db, request } = worldFixture(t, (db) => {
     db.exec(`
       CREATE TABLE world_quests (
@@ -360,11 +381,11 @@ test("opening a previous world updates the schema and preserves its quests", (t)
     setupWorld(db);
   });
   setupWorld(db);
-  const [old] = request("alex").game.quests;
+  const [old] = (await request("alex")).game.quests;
   assert.equal(old.desc, "Old instructions");
   assert.equal(old.submissionPrompt, undefined);
   assert.equal(old.completionCriteria, undefined);
-  const { questId } = request("admin", {
+  const { questId } = await request("admin", {
     action: "quest",
     quest: {
       id: "new",
@@ -378,5 +399,5 @@ test("opening a previous world updates the schema and preserves its quests", (t)
     },
   });
   assert.equal(questId, "new");
-  assert.equal(request("alex").game.quests.length, 2);
+  assert.equal((await request("alex")).game.quests.length, 2);
 });

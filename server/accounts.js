@@ -10,6 +10,7 @@ import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { promisify } from "node:util";
 import { ApiError } from "./http.js";
+import { withTransaction } from "./transactions.js";
 
 const scryptAsync = promisify(scrypt);
 const HASH_PARAMS = { N: 32768, r: 8, p: 3, maxmem: 48 * 1024 * 1024 };
@@ -159,7 +160,7 @@ export async function createPlayer(db, input) {
   validatePassword(input.password);
   const password = await passwordHash(input.password);
   const id = randomUUID();
-  const row = db
+  const row = await db
     .prepare(
       `
     INSERT INTO accounts (id, email, name, role, password_hash, profile_json, language, created_at)
@@ -189,7 +190,9 @@ export async function authenticate(db, input) {
   } catch {
     throw new ApiError(401, "invalid_credentials");
   }
-  const row = db.prepare("SELECT * FROM accounts WHERE email = ?").get(email);
+  const row = await withTransaction(db, false, (tx) =>
+    tx.prepare("SELECT * FROM accounts WHERE email = ?").get(email),
+  );
   if (!(await passwordMatches(input.password, row?.password_hash))) {
     throw new ApiError(401, "invalid_credentials");
   }
@@ -227,9 +230,9 @@ export function sessionCookie(secure) {
   };
 }
 
-export function accountForSession(db, token) {
+export async function accountForSession(db, token) {
   if (!token) return null;
-  const row = db
+  const row = await db
     .prepare(
       `
     SELECT accounts.* FROM accounts JOIN sessions ON accounts.id = sessions.account_id
@@ -240,14 +243,14 @@ export function accountForSession(db, token) {
   return row ? publicAccount(row) : null;
 }
 
-export function removeSession(db, token) {
+export async function removeSession(db, token) {
   if (token)
-    db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(
-      sessionHash(token),
-    );
+    await db
+      .prepare("DELETE FROM sessions WHERE token_hash = ?")
+      .run(sessionHash(token));
 }
 
-export function createSession(
+export async function createSession(
   db,
   accountId,
   previousToken,
@@ -255,69 +258,70 @@ export function createSession(
 ) {
   const now = Date.now();
   const token = randomBytes(32).toString("base64url");
-  db.exec("BEGIN IMMEDIATE");
-  try {
-    if (
-      expectedPasswordHash &&
-      db
-        .prepare("SELECT password_hash FROM accounts WHERE id = ?")
-        .get(accountId)?.password_hash !== expectedPasswordHash
-    ) {
+  if (expectedPasswordHash) {
+    const current = await db
+      .prepare("SELECT password_hash FROM accounts WHERE id = ?")
+      .get(accountId);
+    if (current?.password_hash !== expectedPasswordHash)
       throw new ApiError(401, "invalid_credentials");
-    }
-    removeSession(db, previousToken);
-    db.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now);
-    db.prepare(
-      "INSERT INTO sessions (token_hash, account_id, expires_at) VALUES (?, ?, ?)",
-    ).run(sessionHash(token), accountId, now + SESSION_SECS * 1000);
-    db.exec("COMMIT");
-    return token;
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
   }
+  await removeSession(db, previousToken);
+  await db.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now);
+  await db
+    .prepare(
+      "INSERT INTO sessions (token_hash, account_id, expires_at) VALUES (?, ?, ?)",
+    )
+    .run(sessionHash(token), accountId, now + SESSION_SECS * 1000);
+  return token;
 }
 
 export async function provisionAdmin(
   db,
   { email, password, name = "Game Master" },
+  { firstOnly = false } = {},
 ) {
   const normalizedEmail = normalizeEmail(email);
   const normalizedName = normalizeName(name);
   validatePassword(password);
   const hash = await passwordHash(password);
 
-  db.exec("BEGIN IMMEDIATE");
-  try {
-    const existing = db
+  return withTransaction(db, true, async (tx) => {
+    if (
+      firstOnly &&
+      (await tx
+        .prepare("SELECT 1 FROM accounts WHERE role = 'admin' LIMIT 1")
+        .get())
+    )
+      return "unchanged";
+    const existing = await tx
       .prepare("SELECT id, role FROM accounts WHERE email = ?")
       .get(normalizedEmail);
     if (existing && existing.role !== "admin")
       throw new ApiError(409, "email_in_use");
     if (existing) {
-      db.prepare(
-        "UPDATE accounts SET name = ?, password_hash = ? WHERE id = ?",
-      ).run(normalizedName, hash, existing.id);
-      db.prepare("DELETE FROM sessions WHERE account_id = ?").run(existing.id);
+      await tx
+        .prepare("UPDATE accounts SET name = ?, password_hash = ? WHERE id = ?")
+        .run(normalizedName, hash, existing.id);
+      await tx
+        .prepare("DELETE FROM sessions WHERE account_id = ?")
+        .run(existing.id);
     } else {
-      db.prepare(
-        `
+      await tx
+        .prepare(
+          `
         INSERT INTO accounts (id, email, name, role, password_hash, profile_json, profile_complete, onboarding_complete, language, created_at)
         VALUES (?, ?, ?, 'admin', ?, ?, 1, 1, 'en', ?)
       `,
-      ).run(
-        randomUUID(),
-        normalizedEmail,
-        normalizedName,
-        hash,
-        JSON.stringify(EMPTY_PROFILE),
-        Date.now(),
-      );
+        )
+        .run(
+          randomUUID(),
+          normalizedEmail,
+          normalizedName,
+          hash,
+          JSON.stringify(EMPTY_PROFILE),
+          Date.now(),
+        );
     }
-    db.exec("COMMIT");
     return existing ? "updated" : "created";
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 }

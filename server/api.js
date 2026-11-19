@@ -12,6 +12,7 @@ import {
   sessionCookie,
 } from "./accounts.js";
 import { ApiError, assertWriteOrigin, readJson } from "./http.js";
+import { withTransaction } from "./transactions.js";
 
 export { ApiError };
 
@@ -19,11 +20,11 @@ const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 30;
 const MAX_CONCURRENT_AUTH = 8;
 
-export function createAuthLimits() {
+function createAuthLimits() {
   return { attempts: new Map(), nextSweep: 0, authInFlight: 0 };
 }
 
-function saveProfile(db, account, body) {
+async function saveProfile(db, account, body) {
   if (!Object.hasOwn(body, "profile") && !Object.hasOwn(body, "language")) {
     throw new ApiError(400, "invalid_input");
   }
@@ -34,12 +35,12 @@ function saveProfile(db, account, body) {
   const language = Object.hasOwn(body, "language")
     ? normalizeLanguage(body.language)
     : null;
-  const row = db
+  const row = await db
     .prepare(
       `
     UPDATE accounts
     SET profile_json = COALESCE(?, profile_json),
-        profile_complete = CASE WHEN ? IS NULL THEN profile_complete ELSE 1 END,
+        profile_complete = CASE WHEN CAST(? AS TEXT) IS NULL THEN profile_complete ELSE 1 END,
         language = COALESCE(?, language)
     WHERE id = ? RETURNING *
   `,
@@ -48,7 +49,7 @@ function saveProfile(db, account, body) {
   return publicAccount(row);
 }
 
-function finishQuiz(db, account, answers) {
+async function finishQuiz(db, account, answers) {
   if (!account.profileComplete) throw new ApiError(409, "profile_required");
   if (!Array.isArray(answers)) throw new ApiError(400, "invalid_answers");
   let scores;
@@ -57,7 +58,7 @@ function finishQuiz(db, account, answers) {
   } catch {
     throw new ApiError(400, "invalid_answers");
   }
-  const row = db
+  const row = await db
     .prepare(
       `
     UPDATE accounts SET type_scores = ?, onboarding_complete = 1 WHERE id = ? RETURNING *
@@ -78,7 +79,7 @@ export function createApi({
   origin = process.env.APP_ORIGIN,
   extra,
   setup,
-  authLimits = createAuthLimits(),
+  beforeAuth,
   authAddress = (req) => req.socket.remoteAddress,
 } = {}) {
   const db = database ?? openDatabase(dbPath);
@@ -89,9 +90,10 @@ export function createApi({
     throw error;
   }
   const cookie = sessionCookie(secureCookies);
+  const authLimits = createAuthLimits();
   const { attempts } = authLimits;
 
-  async function startAuth(req, res, path, token, parseBody, retry) {
+  async function startAuth(req, res, path, token) {
     const ip = authAddress(req) || "unknown";
     const now = Date.now();
     if (now >= authLimits.nextSweep) {
@@ -104,7 +106,7 @@ export function createApi({
       entry = { count: 0, until: now + ATTEMPT_WINDOW_MS };
       attempts.set(ip, entry);
     }
-    const rateLimited = !retry && entry.count >= MAX_ATTEMPTS;
+    const rateLimited = entry.count >= MAX_ATTEMPTS;
     if (rateLimited || authLimits.authInFlight >= MAX_CONCURRENT_AUTH) {
       res.setHeader(
         "Retry-After",
@@ -112,29 +114,40 @@ export function createApi({
       );
       throw new ApiError(429, "rate_limited");
     }
-    if (!retry) entry.count++;
-    const body = await parseBody();
+    entry.count++;
+    const body = await readJson(req);
     if (authLimits.authInFlight >= MAX_CONCURRENT_AUTH) {
       res.setHeader("Retry-After", 1);
       throw new ApiError(429, "rate_limited");
     }
     authLimits.authInFlight++;
     try {
+      await beforeAuth?.(db, path, body);
+      let account;
+      let session;
       if (path === "/api/register") {
-        const account = await createPlayer(db, body);
-        cookie.write(res, createSession(db, account.id, token));
-        return account;
+        ({ account, session } = await withTransaction(db, true, async (tx) => {
+          const account = await createPlayer(tx, body);
+          return {
+            account,
+            session: await createSession(tx, account.id, token),
+          };
+        }));
+      } else {
+        const authenticated = await authenticate(db, body);
+        account = authenticated.account;
+        session = await withTransaction(db, true, (tx) =>
+          createSession(tx, account.id, token, authenticated.passwordHash),
+        );
       }
-      const { account, passwordHash } = await authenticate(db, body);
-      cookie.write(res, createSession(db, account.id, token, passwordHash));
+      cookie.write(res, session);
       return account;
     } finally {
       authLimits.authInFlight--;
     }
   }
 
-  async function handler(req, res, { body, retry = false } = {}) {
-    const parseBody = () => body ?? readJson(req);
+  async function handler(req, res) {
     const send = (status, data) => {
       res.statusCode = status;
       res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -149,44 +162,48 @@ export function createApi({
       const route = req.method + " " + path;
 
       if (route === "POST /api/register" || route === "POST /api/login") {
-        const account = await startAuth(
-          req,
-          res,
-          path,
-          token,
-          parseBody,
-          retry,
-        );
+        const account = await startAuth(req, res, path, token);
         return send(route === "POST /api/register" ? 201 : 200, { account });
       }
       if (route === "POST /api/logout") {
         req.resume();
-        removeSession(db, token);
+        if (token)
+          await withTransaction(db, true, (tx) => removeSession(tx, token));
         cookie.write(res, null);
         return send(200, { account: null });
       }
 
-      const account = accountForSession(db, token);
+      const account = token
+        ? await withTransaction(db, false, (tx) => accountForSession(tx, token))
+        : null;
       if (route === "GET /api/session") return send(200, { account });
 
       if (route === "PATCH /api/profile") {
         requireAccount(account);
-        const body = await parseBody();
-        return send(200, { account: saveProfile(db, account, body) });
+        const body = await readJson(req);
+        const updated = await withTransaction(db, true, (tx) =>
+          saveProfile(tx, account, body),
+        );
+        return send(200, { account: updated });
       }
       if (route === "POST /api/onboarding") {
         requireAccount(account);
-        const body = await parseBody();
-        return send(200, { account: finishQuiz(db, account, body.answers) });
+        const body = await readJson(req);
+        const updated = await withTransaction(db, true, (tx) =>
+          finishQuiz(tx, account, body.answers),
+        );
+        return send(200, { account: updated });
       }
       if (route === "GET /api/admin/accounts") {
         requireAccount(account);
         if (account.role !== "admin") throw new ApiError(403, "forbidden");
-        const rows = db
-          .prepare(
-            "SELECT id, name, email, role, onboarding_complete FROM accounts ORDER BY created_at, id",
-          )
-          .all();
+        const rows = await withTransaction(db, false, (tx) =>
+          tx
+            .prepare(
+              "SELECT id, name, email, role, onboarding_complete FROM accounts ORDER BY created_at, id",
+            )
+            .all(),
+        );
         const accounts = rows.map(({ onboarding_complete, ...row }) => ({
           ...row,
           onboardingComplete: Boolean(onboarding_complete),
@@ -195,7 +212,7 @@ export function createApi({
       }
 
       if (extra) {
-        const body = await parseBody();
+        const body = await readJson(req);
         if (
           (await extra({ req, res, account, db, body, send, path })) ||
           res.writableEnded
@@ -208,7 +225,7 @@ export function createApi({
       if (error instanceof ApiError)
         return send(error.status, { error: error.code });
       // Keep internals, passwords and account data out of API responses.
-      console.error("API request failed:", error);
+      console.error("API request failed:", error?.code ?? error?.name);
       return send(500, { error: "server_error" });
     }
   }

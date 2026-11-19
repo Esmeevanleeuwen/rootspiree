@@ -8,6 +8,7 @@ import {
   typePreferences,
 } from "../src/game.js";
 import { ApiError } from "./http.js";
+import { withTransaction } from "./transactions.js";
 
 const stagesWithHouse = new Set([
   "reveal",
@@ -235,8 +236,8 @@ function ownJourney(row, typeScores) {
   return journey;
 }
 
-function readPlayers(db, account) {
-  const users = db
+async function readPlayers(db, account) {
+  const users = await db
     .prepare(
       `
     SELECT accounts.id, accounts.name, p.bio, p.journey, p.type_scores
@@ -278,7 +279,7 @@ function readPlayers(db, account) {
       journey,
     };
   });
-  const npcs = db
+  const npcs = await db
     .prepare(
       `
     SELECT id, name, role, avatar AS av, description AS desc FROM world_npcs ORDER BY rowid
@@ -296,13 +297,14 @@ function readPlayers(db, account) {
   ];
 }
 
-function readGame(db, account) {
-  const players = readPlayers(db, account);
+async function readGame(db, account) {
+  const players = await readPlayers(db, account);
   const isAdmin = account.role === "admin";
   const roster = new Set(players.map((player) => player.id));
-  const quests = db
+  const questRows = await db
     .prepare("SELECT * FROM world_quests ORDER BY rowid")
-    .all()
+    .all();
+  const quests = questRows
     .filter((row) => roster.has(row.player_id))
     .map((row) => {
       const own = row.player_id === account.id;
@@ -335,46 +337,44 @@ function readGame(db, account) {
       };
     });
   const voter = account.role === "admin" ? "gm" : account.id;
-  const posts = db
+  const postRows = await db
     .prepare(
       `
     SELECT p.id, p.player_id, p.message, count(v.account_id) AS total,
-      coalesce(max(v.account_id = ?), 0) AS voted
+      max(CASE WHEN v.account_id = ? THEN 1 ELSE 0 END) AS voted
     FROM world_posts p LEFT JOIN world_votes v ON v.post_id = p.id
-    GROUP BY p.id ORDER BY p.rowid DESC
+    GROUP BY p.id, p.player_id, p.message, p.rowid ORDER BY p.rowid DESC
   `,
     )
-    .all(account.id)
-    .map((row) => ({
-      id: row.id,
-      playerId: row.player_id,
-      msg: row.message,
-      likes: row.total - row.voted,
-      votes: row.voted ? { [voter]: true } : {},
-    }));
+    .all(account.id);
+  const posts = postRows.map((row) => ({
+    id: row.id,
+    playerId: row.player_id,
+    msg: row.message,
+    likes: Number(row.total) - row.voted,
+    votes: row.voted ? { [voter]: true } : {},
+  }));
   const game = { players, quests, posts };
   if (isAdmin) {
-    game.questDrafts = db
+    const drafts = await db
       .prepare(
         "SELECT content FROM world_quest_drafts WHERE admin_id = ? ORDER BY updated_at DESC, rowid DESC",
       )
-      .all(account.id)
-      .map(({ content }) => JSON.parse(content));
+      .all(account.id);
+    game.questDrafts = drafts.map(({ content }) => JSON.parse(content));
   }
   return game;
 }
 
-function questOwnerExists(db, owner) {
-  return Boolean(
-    db
-      .prepare(
-        `
+function findQuestOwner(db, owner) {
+  return db
+    .prepare(
+      `
     SELECT id FROM accounts WHERE id = ? AND role = 'player' AND onboarding_complete = 1
     UNION ALL SELECT id FROM world_npcs WHERE id = ?
   `,
-      )
-      .get(owner, owner),
-  );
+    )
+    .get(owner, owner);
 }
 
 function ensureFound(row) {
@@ -386,53 +386,57 @@ function ensureChanged(result) {
   if (!result.changes) throw new ApiError(409, "conflict");
 }
 
-function saveProfile(db, account, body) {
+async function saveProfile(db, account, body) {
   requirePlayer(account);
   const bio = shortText(body.bio, 300, true);
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
     INSERT INTO world_profiles (account_id, bio) VALUES (?, ?)
     ON CONFLICT(account_id) DO UPDATE SET bio = excluded.bio
   `,
-  ).run(account.id, bio);
+    )
+    .run(account.id, bio);
 }
 
-function saveJourney(db, account, body) {
+async function saveJourney(db, account, body) {
   requirePlayer(account);
   const journey = validatedJourney(body.journey);
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
     INSERT INTO world_profiles (account_id, journey, type_scores) VALUES (?, ?, ?)
     ON CONFLICT(account_id) DO UPDATE SET journey = excluded.journey, type_scores = excluded.type_scores
   `,
-  ).run(
-    account.id,
-    JSON.stringify(journey),
-    JSON.stringify(account.typeScores),
-  );
+    )
+    .run(
+      account.id,
+      JSON.stringify(journey),
+      JSON.stringify(account.typeScores),
+    );
 }
 
-function toggleVote(db, account, body) {
+async function toggleVote(db, account, body) {
   const postId = id(body.id);
   ensureFound(
-    db.prepare("SELECT id FROM world_posts WHERE id = ?").get(postId),
+    await db.prepare("SELECT id FROM world_posts WHERE id = ?").get(postId),
   );
-  const removed = db
+  const removed = await db
     .prepare("DELETE FROM world_votes WHERE post_id = ? AND account_id = ?")
     .run(postId, account.id);
   if (!removed.changes) {
-    db.prepare(
-      "INSERT INTO world_votes (post_id, account_id) VALUES (?, ?)",
-    ).run(postId, account.id);
+    await db
+      .prepare("INSERT INTO world_votes (post_id, account_id) VALUES (?, ?)")
+      .run(postId, account.id);
   }
 }
 
-function addPost(db, account, body) {
+async function addPost(db, account, body) {
   const postId = id(body.id);
   const actor = account.role === "admin" ? "gm" : account.id;
   const message = shortText(body.text, 600);
   ensureChanged(
-    db
+    await db
       .prepare(
         `
     INSERT INTO world_posts (id, player_id, message) VALUES (?, ?, ?)
@@ -473,15 +477,17 @@ function questInput(value, draft = false) {
   };
 }
 
-function saveQuestDraft(db, account, body) {
+async function saveQuestDraft(db, account, body) {
   requireAdmin(account);
   const draft = questInput(body.quest, true);
-  if (draft.playerId) ensureFound(questOwnerExists(db, draft.playerId));
-  if (db.prepare("SELECT 1 FROM world_quests WHERE id = ?").get(draft.id)) {
+  if (draft.playerId) ensureFound(await findQuestOwner(db, draft.playerId));
+  if (
+    await db.prepare("SELECT 1 FROM world_quests WHERE id = ?").get(draft.id)
+  ) {
     throw new ApiError(409, "conflict");
   }
   ensureChanged(
-    db
+    await db
       .prepare(
         `
       INSERT INTO world_quest_drafts (id, admin_id, content, updated_at)
@@ -495,14 +501,14 @@ function saveQuestDraft(db, account, body) {
   );
 }
 
-function deleteQuestDraft(db, account, body) {
+async function deleteQuestDraft(db, account, body) {
   requireAdmin(account);
-  db.prepare(
-    "DELETE FROM world_quest_drafts WHERE id = ? AND admin_id = ?",
-  ).run(id(body.id), account.id);
+  await db
+    .prepare("DELETE FROM world_quest_drafts WHERE id = ? AND admin_id = ?")
+    .run(id(body.id), account.id);
 }
 
-function addQuest(db, account, body) {
+async function addQuest(db, account, body) {
   requireAdmin(account);
   const quest = questInput(body.quest);
   const fields = {
@@ -516,7 +522,7 @@ function addQuest(db, account, body) {
     minus: quest.minus,
     assigned_by: account.id,
   };
-  const existing = db
+  const existing = await db
     .prepare("SELECT * FROM world_quests WHERE id = ?")
     .get(quest.id);
   if (existing) {
@@ -527,14 +533,14 @@ function addQuest(db, account, body) {
     }
     throw new ApiError(409, "conflict");
   }
-  const draft = db
+  const draft = await db
     .prepare("SELECT admin_id FROM world_quest_drafts WHERE id = ?")
     .get(quest.id);
   if (draft && draft.admin_id !== account.id)
     throw new ApiError(409, "conflict");
-  ensureFound(questOwnerExists(db, quest.playerId));
+  ensureFound(await findQuestOwner(db, quest.playerId));
   if (quest.sharedGoalId) {
-    const profile = db
+    const profile = await db
       .prepare("SELECT journey FROM world_profiles WHERE account_id = ?")
       .get(quest.playerId);
     const goals = JSON.parse(profile?.journey ?? "null")?.goals;
@@ -542,30 +548,36 @@ function addQuest(db, account, body) {
       throw new ApiError(409, "conflict");
     }
   }
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
     INSERT INTO world_quests (
       id, player_id, name, description, submission_prompt, completion_criteria,
       shared_goal_id, plus, minus, assigned_by, state
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Open')
   `,
-  ).run(quest.id, ...Object.values(fields));
-  if (draft) deleteQuestDraft(db, account, quest);
+    )
+    .run(quest.id, ...Object.values(fields));
+  if (draft) await deleteQuestDraft(db, account, quest);
   return quest.id;
 }
 
-function submitQuest(db, account, body) {
+async function submitQuest(db, account, body) {
   const questId = id(body.id);
   const quest = ensureFound(
-    db.prepare("SELECT player_id FROM world_quests WHERE id = ?").get(questId),
+    await db
+      .prepare("SELECT player_id FROM world_quests WHERE id = ?")
+      .get(questId),
   );
   const npcSubmission =
     account.role === "admin" &&
-    db.prepare("SELECT id FROM world_npcs WHERE id = ?").get(quest.player_id);
+    (await db
+      .prepare("SELECT id FROM world_npcs WHERE id = ?")
+      .get(quest.player_id));
   if (quest.player_id !== account.id && !npcSubmission)
     throw new ApiError(403, "forbidden");
   ensureChanged(
-    db
+    await db
       .prepare(
         `
     UPDATE world_quests SET state = 'Ingeleverd', evidence = ? WHERE id = ? AND state = 'Open'
@@ -575,15 +587,15 @@ function submitQuest(db, account, body) {
   );
 }
 
-function reviewQuest(db, account, body) {
+async function reviewQuest(db, account, body) {
   requireAdmin(account);
   const questId = id(body.id);
   ensureFound(
-    db.prepare("SELECT id FROM world_quests WHERE id = ?").get(questId),
+    await db.prepare("SELECT id FROM world_quests WHERE id = ?").get(questId),
   );
   requireInput(typeof body.passed === "boolean");
   ensureChanged(
-    db
+    await db
       .prepare(
         `
     UPDATE world_quests SET state = ?, feedback = ? WHERE id = ? AND state = 'Ingeleverd'
@@ -597,14 +609,16 @@ function reviewQuest(db, account, body) {
   );
 }
 
-function addNpc(db, account, body) {
+async function addNpc(db, account, body) {
   requireAdmin(account);
   const npc = record(body.player);
   const npcId = id(npc.id);
   requireInput(npcId !== "gm" && npc.npc === true && avatars.has(npc.av));
-  requireInput(!db.prepare("SELECT id FROM accounts WHERE id = ?").get(npcId));
+  requireInput(
+    !(await db.prepare("SELECT id FROM accounts WHERE id = ?").get(npcId)),
+  );
   ensureChanged(
-    db
+    await db
       .prepare(
         `
     INSERT INTO world_npcs (id, name, role, avatar, description) VALUES (?, ?, ?, ?, ?)
@@ -621,11 +635,11 @@ function addNpc(db, account, body) {
   );
 }
 
-function addExercise(db, account, body) {
+async function addExercise(db, account, body) {
   requirePlayer(account);
   const questId = id(body.id);
   const goalId = id(body.goalId);
-  const stored = db
+  const stored = await db
     .prepare(
       "SELECT journey, type_scores FROM world_profiles WHERE account_id = ?",
     )
@@ -633,7 +647,7 @@ function addExercise(db, account, body) {
   const journey = ownJourney(stored, account.typeScores);
   const goal = ensureFound(currentGoal(journey));
   if (goal.id !== goalId) throw new ApiError(409, "conflict");
-  const opened = db
+  const opened = await db
     .prepare(
       `
     SELECT id FROM world_quests WHERE state = 'Open' AND player_id = ? AND goal_id = ?
@@ -644,7 +658,7 @@ function addExercise(db, account, body) {
 
   const kind = goalKinds[goal.kind];
   ensureChanged(
-    db
+    await db
       .prepare(
         `
     INSERT INTO world_quests (
@@ -678,7 +692,7 @@ const actions = new Map([
   ["exercise", addExercise],
 ]);
 
-export function handleWorld({ req, account, db, body, send, path }) {
+export async function handleWorld({ req, account, db, body, send, path }) {
   if (path !== "/api/world") return false;
   if (!account) throw new ApiError(401, "unauthenticated");
   if (account.role === "player" && !account.onboardingComplete) {
@@ -688,21 +702,18 @@ export function handleWorld({ req, account, db, body, send, path }) {
   if (!writing && req.method !== "GET")
     throw new ApiError(405, "method_not_allowed");
 
-  db.exec(writing ? "BEGIN IMMEDIATE" : "BEGIN");
-  let response;
-  try {
+  const response = await withTransaction(db, writing, async (transaction) => {
     let questId;
     if (writing) {
       const action = actions.get(record(body).action);
       if (!action) throw new ApiError(400, "invalid_input");
-      questId = action(db, account, body);
+      questId = await action(transaction, account, body);
     }
-    response = { game: readGame(db, account), ...(questId && { questId }) };
-    db.exec("COMMIT");
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
-  }
+    return {
+      game: await readGame(transaction, account),
+      ...(questId && { questId }),
+    };
+  });
   send(200, response);
   return true;
 }

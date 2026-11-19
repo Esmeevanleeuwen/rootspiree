@@ -4,47 +4,17 @@ import { once } from "node:events";
 import { test } from "node:test";
 import { statements } from "../src/content.js";
 import { createHostedApi } from "./hosted.js";
+import { openDatabase } from "./accounts.js";
+import { setupWorld } from "./world.js";
 
 const origin = "https://rootspiree.example.test";
 const playerPassword = "a different sample password";
 
-function snapshotStore() {
-  let snapshot = null;
-  let version = 0;
-  let waiting;
-  let conflictCount = 0;
-  return {
-    pairReads() {
-      waiting = [];
-    },
-    get conflicts() {
-      return conflictCount;
-    },
-    async read() {
-      const value = snapshot && {
-        bytes: Buffer.from(snapshot.bytes),
-        etag: snapshot.etag,
-      };
-      if (waiting) {
-        await new Promise((resolve) => {
-          waiting.push(resolve);
-          if (waiting.length === 2) {
-            for (const release of waiting) release();
-            waiting = null;
-          }
-        });
-      }
-      return value;
-    },
-    async write(bytes, etag) {
-      if ((snapshot?.etag ?? undefined) !== etag) {
-        conflictCount++;
-        return false;
-      }
-      snapshot = { bytes: Buffer.from(bytes), etag: String(++version) };
-      return true;
-    },
-  };
+function testDatabase(t) {
+  const database = openDatabase(":memory:");
+  setupWorld(database);
+  t.after(() => database.close());
+  return database;
 }
 
 async function start(t, options) {
@@ -81,17 +51,16 @@ async function start(t, options) {
   };
 }
 
-test("hosted requests preserve concurrent signups and survive a new instance", async (t) => {
-  const storage = snapshotStore();
-  const first = await start(t, { storage });
-  const second = await start(t, { storage });
+test("hosted routing preserves concurrent signups and secure sessions", async (t) => {
+  const database = testDatabase(t);
+  const first = await start(t, { database });
+  const second = await start(t, { database });
   const credentials = (email) => ({
     email,
     name: email.split("@")[0],
     password: playerPassword,
     language: "en",
   });
-  storage.pairReads();
   const [one, two] = await Promise.all([
     first("register", {
       method: "POST",
@@ -102,7 +71,6 @@ test("hosted requests preserve concurrent signups and survive a new instance", a
       body: credentials("two@example.test"),
     }),
   ]);
-  assert.equal(storage.conflicts, 1);
   for (const registration of [one, two]) {
     assert.equal(registration.status, 201);
     assert.match(
@@ -111,7 +79,7 @@ test("hosted requests preserve concurrent signups and survive a new instance", a
     );
   }
 
-  const reader = await start(t, { storage });
+  const reader = await start(t, { database });
   assert.equal(
     (await reader("session", { cookie: one.cookie })).data.account.email,
     "one@example.test",
@@ -151,10 +119,10 @@ test("hosted requests preserve concurrent signups and survive a new instance", a
 });
 
 test("hosted admin is bootstrapped once and its credentials are never reset implicitly", async (t) => {
-  const storage = snapshotStore();
+  const database = testDatabase(t);
   const adminEmail = "gm@example.test";
   const adminPassword = "an admin sample password";
-  const adminOptions = { storage, adminEmail, adminPassword };
+  const adminOptions = { database, adminEmail, adminPassword };
   const first = await start(t, adminOptions);
   const reserved = await first("register", {
     method: "POST",
@@ -166,13 +134,19 @@ test("hosted admin is bootstrapped once and its credentials are never reset impl
     },
   });
   assert.equal(reserved.status, 409);
-  assert.equal(await storage.read(), null);
+  assert.equal(
+    database.prepare("SELECT count(*) AS total FROM accounts").get().total,
+    0,
+  );
   const invalid = await first("login", {
     method: "POST",
     body: { email: adminEmail, password: playerPassword },
   });
   assert.equal(invalid.status, 401);
-  assert.equal(await storage.read(), null);
+  assert.equal(
+    database.prepare("SELECT count(*) AS total FROM accounts").get().total,
+    0,
+  );
 
   const admin = await first("login", {
     method: "POST",
@@ -192,15 +166,14 @@ test("hosted admin is bootstrapped once and its credentials are never reset impl
   assert.equal(session.data.account.id, admin.data.account.id);
 });
 
-test("hosted writes with unavailable storage do not leak a success cookie", async (t) => {
-  const storage = {
-    read: async () => null,
-    write: async () => {
+test("hosted writes with unavailable storage do not issue a success cookie", async (t) => {
+  const database = {
+    transaction: async () => {
       throw new Error("storage unavailable");
     },
   };
   t.mock.method(console, "error", () => {});
-  const request = await start(t, { storage });
+  const request = await start(t, { database });
   const response = await request("register", {
     method: "POST",
     body: {
@@ -210,6 +183,6 @@ test("hosted writes with unavailable storage do not leak a success cookie", asyn
       language: "en",
     },
   });
-  assert.equal(response.status, 503);
+  assert.equal(response.status, 500);
   assert.equal(response.cookie, undefined);
 });
