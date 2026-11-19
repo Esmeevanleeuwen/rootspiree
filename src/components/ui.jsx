@@ -4,6 +4,20 @@ import { useGame } from "../store.jsx";
 import { paths } from "../icons.js";
 import { houses } from "../content.js";
 
+export function BrandMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 42 48">
+      <path
+        fill="var(--color-surface-raised)"
+        d="M21 1 40 12v24L21 47 2 36V12z"
+      />
+      <g fill="none" stroke="var(--color-accent)" strokeWidth="1.4">
+        <path d="m21 7 13 8v17l-13 8-13-8V15z" />
+        <path d="m10 30 8-14 5 9 3-5 7 12M16 32l5-9 5 9" />
+      </g>
+    </svg>
+  );
+}
 export function Icon({ name }) {
   return (
     <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">

@@ -1,17 +1,11 @@
 import { useEffect, useRef } from "react";
 import { LanguageSelector } from "./Entry.jsx";
-import { Icon } from "./ui.jsx";
+import { BrandMark, Icon } from "./ui.jsx";
 
 function GameBrand() {
   return (
     <div className="app-wordmark">
-      <svg aria-hidden="true" viewBox="0 0 42 48">
-        <path fill="#173f33" d="M21 1 40 12v24L21 47 2 36V12z" />
-        <g fill="none" stroke="#d8bc83" strokeWidth="1.4">
-          <path d="m21 7 13 8v17l-13 8-13-8V15z" />
-          <path d="m10 30 8-14 5 9 3-5 7 12M16 32l5-9 5 9" />
-        </g>
-      </svg>
+      <BrandMark />
       <span>
         LevelUp <small>WORLD</small>
       </span>
@@ -22,56 +16,53 @@ function GameBrand() {
 export function GameNavigation({ gm, page, navigate, words }) {
   const activePage =
     page === "questEditor" ? "quests" : page === "accounts" ? "players" : page;
-  const groups = gm
-    ? [
-        {
-          label: words.manage,
-          links: [
-            ["home", "home", words.home],
-            ["quests", "flag", words.quests],
-            ["players", "people", words.people],
-          ],
-        },
-        { label: words.community, links: [["feed", "fire", words.feed]] },
-      ]
-    : [
-        {
-          label: words.play,
-          links: [
-            ["home", "compass", words.journey],
-            ["quests", "flag", words.quests],
-          ],
-        },
-        {
-          label: words.community,
-          links: [
-            ["players", "people", words.players],
-            ["feed", "fire", words.feed],
-          ],
-        },
-      ];
+  const links = [
+    [
+      "home",
+      "compass",
+      gm ? words.home : words.journey,
+      gm ? words.homeShort : words.journey,
+    ],
+    ["world", "globe", words.world, words.worldShort],
+    ["players", "people", gm ? words.people : words.players],
+    ["quests", "flag", words.quests],
+    ["feed", "fire", words.feed],
+    ["settings", "settings", words.settings],
+  ];
   return (
     <aside className="app-sidebar">
       <GameBrand />
       <nav className="app-navigation" aria-label={words.nav}>
-        {groups.map(({ label, links }) => (
-          <div className="app-nav-group" key={label}>
-            <p className="app-nav-label">{label}</p>
-            {links.map(([id, icon, title]) => (
-              <button
-                key={id}
-                type="button"
-                className="app-nav-link"
-                aria-current={activePage === id ? "page" : undefined}
-                onClick={() => navigate(id)}
-              >
-                <Icon name={icon} />
-                <span>{title}</span>
-              </button>
-            ))}
-          </div>
+        {links.map(([id, icon, title, compact]) => (
+          <button
+            key={id}
+            type="button"
+            className={
+              "app-nav-link" + (id === "settings" ? " app-nav-settings" : "")
+            }
+            aria-current={activePage === id ? "page" : undefined}
+            onClick={() => navigate(id)}
+          >
+            <Icon name={icon} />
+            <span className={compact ? "app-nav-full" : undefined}>
+              {title}
+            </span>
+            {compact && <span className="app-nav-compact">{compact}</span>}
+          </button>
         ))}
       </nav>
+      {gm && (
+        <section className="app-admin-card">
+          <h2>
+            <Icon name="crown" />
+            {words.gameMaster}
+          </h2>
+          <p>{words.gameMasterHelp}</p>
+          <button type="button" onClick={() => navigate("guide")}>
+            {words.about}
+          </button>
+        </section>
+      )}
     </aside>
   );
 }
@@ -146,6 +137,10 @@ export function GameTopBar({
               {words.profile}
             </button>
           )}
+          <button type="button" onClick={() => openPage("settings")}>
+            <Icon name="settings" />
+            {words.settings}
+          </button>
           <button type="button" onClick={() => openPage("guide")}>
             <Icon name="info" />
             {words.about}
@@ -161,7 +156,7 @@ export function GameTopBar({
               onLogout();
             }}
           >
-            <Icon name="chev" />
+            <Icon name="logOut" />
             {words.logOut}
           </button>
         </div>

@@ -1,367 +1,528 @@
 .app-shell {
-  --app-surface: #fffefa;
-  --app-ground: #f8f9f5;
-  --app-border: #e1e6dd;
-  --app-tint: #eef2ea;
-  --app-ink: #20372e;
-  min-height: 100dvh;
+  min-height: calc(100dvh - var(--space-6));
+  margin: var(--space-3);
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  background: var(--app-ground);
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  background: var(--gradient-page);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
+
 .app-sidebar {
   position: sticky;
-  top: 0;
-  height: 100dvh;
+  top: var(--space-3);
+  min-height: min(44rem, calc(100dvh - var(--space-6)));
   align-self: start;
   display: flex;
   flex-direction: column;
-  padding: 24px 14px;
-  background: var(--app-surface);
-  border-right: 1px solid var(--app-border);
+  gap: var(--space-6);
+  padding: var(--space-5) var(--space-3);
+  background: var(--color-sidebar);
+  border-right: 1px solid var(--color-border);
+  border-radius: var(--radius-md) 0 0 0;
 }
+
 .app-wordmark {
   width: fit-content;
   display: flex;
   align-items: center;
-  gap: 9px;
-  color: #173f33;
-  font: 700 25px/0.92 var(--serif);
-  letter-spacing: -0.045em;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font: 740 1.12rem/1.05 var(--font-display);
+  letter-spacing: -0.03em;
   white-space: nowrap;
 }
+
 .app-wordmark svg {
-  width: 32px;
-  height: 36px;
+  width: var(--space-7);
+  height: calc(var(--space-7) + var(--space-1));
 }
+
 .app-wordmark small {
   display: block;
-  margin: 5px 0 0 2px;
-  font: 700 8px/1 var(--sans);
-  letter-spacing: 0.3em;
+  margin-block-start: var(--space-1);
+  color: var(--color-accent);
+  font: 730 var(--font-size-xs)/1 var(--font-sans);
+  font-size: 0.61rem;
+  letter-spacing: 0.18em;
 }
+
 .app-sidebar > .app-wordmark {
-  margin: 2px 8px 36px;
+  padding-inline: var(--space-2);
 }
 .app-navigation {
   display: grid;
-  gap: 25px;
+  gap: var(--space-1);
 }
-.app-nav-label {
-  margin: 0 0 6px 11px;
-  color: #5c6d63;
-  font-size: 0.75rem;
-  font-weight: 640;
-}
+
 .app-nav-link {
   width: 100%;
-  min-height: 42px;
+  min-height: var(--control-height);
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 11px;
-  border-radius: 7px;
-  color: #445a4d;
+  gap: var(--space-3);
+  border: 1px solid transparent;
+  border-inline-start: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-muted);
   text-align: left;
-  font-size: 0.875rem;
-  font-weight: 540;
+  font-size: var(--font-size-sm);
+  font-weight: 640;
 }
-.app-nav-link + .app-nav-link {
-  margin-top: 3px;
-}
+
 .app-nav-link .ico {
-  width: 17px;
-  height: 17px;
+  width: calc(var(--size-icon) * 0.9);
+  height: calc(var(--size-icon) * 0.9);
+  color: var(--color-info);
 }
+
 .app-nav-link:hover {
-  background: #f4f6ef;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
+
 .app-nav-link[aria-current="page"] {
-  background: var(--app-tint);
-  color: #183f33;
-  font-weight: 740;
+  border-inline-start-color: var(--color-positive);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
 }
+
+.app-nav-compact {
+  display: none;
+}
+
+.app-admin-card {
+  margin-block-start: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--gradient-card);
+}
+
+.app-admin-card h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: 700 var(--font-size-sm)/1.3 var(--font-sans);
+}
+
+.app-admin-card h2 .ico {
+  color: var(--color-accent);
+}
+.app-admin-card p {
+  margin-block-start: var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
+.app-admin-card button {
+  width: 100%;
+  min-height: calc(var(--control-height) * 0.85);
+  margin-block-start: var(--space-3);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+}
+
+.app-admin-card button:hover {
+  background: var(--color-accent-hover);
+}
+
 .app-main {
   min-width: 0;
+  position: relative;
 }
+
 .app-top {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  min-height: 62px;
+  position: absolute;
+  z-index: 5;
+  inset: var(--space-5) var(--content-gutter) auto auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 13px;
-  padding: 8px clamp(19px, 3.7vw, 57px);
-  background: var(--app-surface);
-  border-bottom: 1px solid var(--app-border);
+  gap: var(--space-2);
 }
+
 .app-mobile-brand {
   display: none;
 }
 .app-account {
   position: relative;
+  min-width: 0;
 }
+
 .app-account-trigger {
-  min-height: 40px;
-  max-width: 260px;
+  min-height: var(--control-height);
+  max-width: 16rem;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 3px 7px;
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-sidebar);
+  color: var(--color-text);
   list-style: none;
-  color: var(--app-ink);
-  font-size: 0.85rem;
   cursor: pointer;
+  font-size: var(--font-size-sm);
 }
+
 .app-account-trigger::-webkit-details-marker {
   display: none;
 }
 .app-account-trigger:hover,
 .app-account[open] .app-account-trigger {
-  background: var(--app-tint);
+  background: var(--color-surface-hover);
 }
+.app-account-trigger:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .app-initial {
-  width: 30px;
-  height: 30px;
+  width: var(--space-6);
+  height: var(--space-6);
   display: grid;
   place-items: center;
   flex: none;
-  border-radius: 50%;
-  background: #e3ebdf;
-  color: #274b3b;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
   font-weight: 750;
 }
+
 .app-account-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 640;
+  font-weight: 660;
 }
+
 .app-account-chevron {
   display: inline-flex;
-  margin-left: 1px;
   transform: rotate(90deg);
-  color: var(--muted);
+  color: var(--color-muted);
 }
+
 .app-account-chevron .ico {
-  width: 14px;
-  height: 14px;
+  width: var(--space-3);
+  height: var(--space-3);
 }
+
 .app-account-panel {
   position: absolute;
-  inset: calc(100% + 8px) 0 auto auto;
-  width: min(240px, calc(100vw - 32px));
+  inset: calc(100% + var(--space-2)) 0 auto auto;
+  width: min(15rem, calc(100vw - var(--space-7)));
   display: grid;
-  gap: 3px;
-  padding: 7px;
-  border: 1px solid var(--app-border);
-  border-radius: 11px;
-  background: var(--app-surface);
-  box-shadow: 0 12px 28px #21372a1a;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
 }
+
 .app-account:not([open]) .app-account-panel {
   display: none;
 }
+
 .app-account-panel > button {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 37px;
-  padding: 5px 9px;
-  border-radius: 6px;
-  color: var(--app-ink);
-  font-size: 0.875rem;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
   font-weight: 620;
   text-align: left;
 }
+
 .app-account-panel > button:hover {
-  background: var(--app-tint);
+  background: var(--color-surface-hover);
 }
 .app-account-panel > button .ico {
-  width: 16px;
-  height: 16px;
+  color: var(--color-info);
 }
+
 .app-account-options {
-  margin-block: 2px;
-  border-block: 1px solid var(--app-border);
-  padding: 8px;
+  margin-block: var(--space-1);
+  border-block: 1px solid var(--color-border);
+  padding: var(--space-2) var(--space-1);
 }
+
 .app-account-options p {
-  margin: 0 0 5px;
-  color: #536459;
-  font-size: 0.75rem;
+  margin: 0 0 var(--space-1) var(--space-1);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
   font-weight: 620;
 }
+
 .app-account-options .entry-language button {
   flex: 1;
-  padding-inline: 5px;
+  padding-inline: var(--space-1);
 }
+
 .app-content.wrap {
-  max-width: 1290px;
-  margin: 0 auto;
-  padding: clamp(25px, 4vw, 46px) clamp(20px, 4vw, 52px) 52px;
+  max-width: var(--content-max);
   min-width: 0;
+  margin-inline: auto;
+  padding: calc(var(--control-height) + var(--space-7)) var(--content-gutter)
+    var(--space-8);
 }
+
+.app-content-dashboard.wrap {
+  padding-block-start: var(--space-5);
+}
+
+.app-content-dashboard .heading:first-child {
+  padding-inline-end: min(16rem, 28%);
+  min-height: var(--control-height);
+}
+
 .app-content .heading {
-  gap: 12px 18px;
-  margin-bottom: 25px;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
   flex-wrap: wrap;
 }
+
 .app-content .heading h1 {
-  color: var(--app-ink);
-  font: 700 clamp(1.8rem, 3.9vw, 2.55rem)/1.12 var(--sans);
-  letter-spacing: -0.047em;
+  color: var(--color-text);
+  font: 760 var(--font-size-title)/1.08 var(--font-display);
+  letter-spacing: -0.048em;
+}
+
+.app-content .heading .eyebrow {
+  margin-bottom: var(--space-1);
 }
 .app-content .sectionhead h2 {
-  color: var(--app-ink);
-  font: 680 clamp(1.12rem, 2vw, 1.4rem)/1.22 var(--sans);
-  letter-spacing: -0.023em;
-}
-.app-content .heading .eyebrow {
-  margin-bottom: 4px;
+  color: var(--color-text);
+  font: 710 var(--font-size-section)/1.2 var(--font-sans);
+  letter-spacing: -0.025em;
 }
 .app-content .detailbox[role="alert"] {
   margin-top: 0;
 }
+
 .app-people-switch {
   display: flex;
   width: fit-content;
-  gap: 3px;
-  margin-bottom: 22px;
-  padding: 3px;
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
-  background: var(--app-tint);
+  gap: var(--space-1);
+  margin-bottom: var(--space-5);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-field);
 }
+
 .app-people-switch button {
-  min-height: 37px;
-  padding: 6px 15px;
-  border-radius: 5px;
-  color: #4b5c51;
-  font-size: 0.875rem;
-  font-weight: 630;
+  min-height: calc(var(--control-height) * 0.9);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 640;
 }
+
 .app-people-switch button[aria-current="page"] {
-  color: var(--app-ink);
-  background: var(--app-surface);
-  box-shadow: 0 1px 3px #22372b15;
+  color: var(--color-text);
+  background: var(--color-surface-hover);
 }
+
 .app-accounts.accounts-panel {
-  max-width: 860px;
+  max-width: 54rem;
   padding: 0;
-  background: var(--app-surface);
-  border-color: var(--app-border);
-  border-radius: 11px;
+  background: var(--gradient-card);
+  border-color: var(--color-border);
+  border-radius: var(--radius-md);
 }
-.app-accounts .accounts-table th {
-  font-size: 0.8rem;
-  color: #536459;
-}
+
 .app-accounts .accounts-table :is(th, td) {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   overflow-wrap: anywhere;
 }
-.app-accounts .accounts-table tbody th {
-  color: var(--app-ink);
-  font-size: inherit;
+
+.app-accounts .accounts-table thead {
+  background: var(--color-field);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
 }
-.app-accounts .accounts-table td {
-  color: #445a4d;
-  font-size: 0.875rem;
+
+.app-accounts .accounts-table tbody td {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
 }
+
 .app-accounts .accounts-table td:last-child {
   white-space: nowrap;
-}
-.app-guide {
-  max-width: 620px;
-}
-.app-guide button {
-  margin-top: 12px;
-}
-
-@media (max-width: 1050px) and (min-width: 771px) {
-  .app-shell {
-    grid-template-columns: 184px minmax(0, 1fr);
-  }
-}
-@media (max-width: 770px) {
-  .app-shell {
-    display: block;
-  }
-  .app-sidebar {
-    position: fixed;
-    inset: auto 0 0;
-    z-index: 4;
-    height: auto;
-    padding: 4px 6px max(env(safe-area-inset-bottom), 5px);
-    border-top: 1px solid var(--app-border);
-    border-right: 0;
-  }
-  .app-sidebar > .app-wordmark,
-  .app-nav-label {
-    display: none;
-  }
-  .app-navigation {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 4px;
-  }
-  .app-nav-group {
-    display: contents;
-  }
-  .app-nav-link {
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    min-height: 48px;
-    padding: 4px 1px;
-    font-size: 0.72rem;
-    text-align: center;
-    line-height: 1.15;
-  }
-  .app-nav-link + .app-nav-link {
-    margin-top: 0;
-  }
-  .app-top {
-    min-height: 57px;
-    padding-inline: 15px;
-    gap: 8px;
-  }
-  .app-mobile-brand {
-    display: block;
-    margin-right: auto;
-  }
-  .app-mobile-brand .app-wordmark {
-    font-size: 22px;
-  }
-  .app-mobile-brand svg {
-    width: 26px;
-    height: 30px;
-  }
-  .app-account-trigger {
-    max-width: min(200px, 54vw);
-  }
-  .app-content.wrap {
-    padding: 23px 16px 86px;
-  }
-  .app-content .heading {
-    margin-bottom: 19px;
-  }
-}
-
-.app-account-trigger:focus-visible {
-  outline: 3px solid var(--gold);
-  outline-offset: 3px;
 }
 .app-account-cell-label {
   display: none;
 }
-@media (max-width: 500px) {
-  .app-accounts .accounts-table {
-    min-width: 0;
+
+.app-guide,
+.app-settings {
+  max-width: 44rem;
+}
+.app-guide button {
+  margin-top: var(--space-3);
+}
+
+.app-settings .app-setting {
+  padding: var(--space-4);
+  margin-block: var(--space-3);
+  background: var(--gradient-card);
+}
+
+.app-setting h2 {
+  margin-block-end: var(--space-2);
+  font-size: var(--font-size-base);
+}
+
+.app-setting p {
+  color: var(--color-muted);
+  margin-block-end: var(--space-2);
+}
+.app-setting .entry-language {
+  width: fit-content;
+}
+
+.world-intro {
+  margin-block-end: var(--space-6);
+  color: var(--color-muted);
+}
+.world-houses .world-house {
+  background: var(--gradient-card);
+}
+.world-houses .houseArt {
+  height: clamp(7rem, 12vw, 13rem);
+}
+.world-houses .houseText {
+  align-items: center;
+}
+.world-houses .houseText > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.world-house-description {
+  display: block;
+  margin: 0 var(--space-3) var(--space-3);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.55;
+}
+.world-membership {
+  display: block;
+  width: fit-content;
+  margin: 0 var(--space-3) var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+@media (max-width: 1050px) and (min-width: 771px) {
+  .app-shell {
+    grid-template-columns: calc(var(--sidebar-width) * 0.88) minmax(0, 1fr);
   }
+  .world-houses {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 770px) {
+  .app-shell {
+    display: block;
+    min-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .app-sidebar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 4;
+    display: block;
+    min-height: auto;
+    padding: var(--space-1) var(--space-2)
+      max(env(safe-area-inset-bottom), var(--space-1));
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    border-radius: 0;
+  }
+
+  .app-sidebar > .app-wordmark,
+  .app-admin-card,
+  .app-nav-settings,
+  .app-nav-full {
+    display: none;
+  }
+  .app-nav-compact {
+    display: block;
+  }
+
+  .app-navigation {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--space-1);
+  }
+
+  .app-nav-link {
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-1);
+    min-height: calc(var(--nav-height) - var(--space-2));
+    padding: var(--space-1);
+    border-inline-start-width: 1px;
+    border-bottom-width: 2px;
+    font-size: var(--font-size-xs);
+    text-align: center;
+    line-height: 1.12;
+  }
+
+  .app-nav-link[aria-current="page"] {
+    border-inline-start-color: transparent;
+    border-bottom-color: var(--color-positive);
+  }
+
+  .app-top {
+    position: sticky;
+    inset: 0 0 auto;
+    min-height: var(--nav-height);
+    justify-content: space-between;
+    padding: var(--space-2) var(--content-gutter);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-sidebar);
+  }
+
+  .app-mobile-brand {
+    display: block;
+  }
+  .app-account-trigger {
+    max-width: min(12rem, 49vw);
+  }
+
+  .app-content.wrap {
+    padding: var(--space-5) var(--content-gutter)
+      calc(var(--nav-height) + var(--space-7));
+  }
+
+  .app-content-dashboard .heading:first-child {
+    padding-inline-end: 0;
+  }
+  .app-content .heading {
+    margin-bottom: var(--space-4);
+  }
+}
+
+@media (max-width: 500px) {
   .app-accounts .accounts-table thead {
     position: absolute;
     width: 1px;
@@ -369,21 +530,25 @@
     overflow: hidden;
     clip-path: inset(50%);
   }
+
   .app-accounts .accounts-table tbody tr {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    padding: 8px 13px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: var(--space-2) var(--space-3);
   }
+
   .app-accounts .accounts-table tbody :is(th, td) {
-    padding: 3px 0;
+    padding: var(--space-1) 0;
   }
+
   .app-accounts .accounts-table tbody th,
   .app-accounts .accounts-table tbody td:first-of-type {
     grid-column: 1 / -1;
   }
+
   .app-account-cell-label {
     display: block;
-    color: var(--muted);
-    font-size: 0.72rem;
+    color: var(--color-muted);
+    font-size: var(--font-size-xs);
   }
 }

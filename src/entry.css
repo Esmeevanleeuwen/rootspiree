@@ -1,208 +1,272 @@
 .entry-site {
+  --entry-gutter: clamp(var(--space-4), 5vw, var(--space-8));
+  --entry-auth-width: 58rem;
+  --entry-setup-width: 44rem;
   min-height: 100dvh;
-  background: #f3f4ec;
+  background: var(--gradient-page);
+  color: var(--color-text);
 }
+
 .entry-header {
-  min-height: 78px;
-  max-width: 1280px;
-  margin-inline: auto;
-  padding: 14px clamp(18px, 5vw, 64px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
+  width: min(var(--content-max), calc(100% - 2 * var(--entry-gutter)));
+  min-height: var(--nav-height);
+  margin-inline: auto;
+  padding-block: var(--space-3);
 }
+
 .entry-header-actions,
 .entry-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
+
 .entry-brand {
   padding: 0;
-  font: 700 28px/0.9 var(--serif);
-  color: var(--pine);
+  color: var(--color-text);
+  font: 750 1.6rem / 0.95 var(--font-display);
+  letter-spacing: -0.055em;
   text-align: left;
-  letter-spacing: -0.06em;
 }
+
 .entry-brand svg {
-  width: 32px;
-  height: 38px;
+  width: 2rem;
+  height: 2.375rem;
+  flex: none;
 }
+
+.entry-brand svg > path {
+  fill: var(--color-surface-hover);
+  stroke: var(--color-border);
+}
+
+.entry-brand svg g {
+  stroke: var(--color-accent);
+}
+
 .entry-brand small {
   display: block;
-  margin-top: 7px;
-  font: 750 9px/1 var(--sans);
+  margin-top: var(--space-1);
+  color: var(--color-accent);
+  font: 750 0.58rem / 1 var(--font-sans);
   letter-spacing: 0.28em;
 }
+
 .entry-language,
 .entry-auth-picker {
   display: flex;
   align-items: center;
-  gap: 3px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 3px;
-  background: #e9ede4;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-sidebar);
 }
+
 .entry-language button,
 .entry-auth-picker button {
-  padding: 7px 10px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--muted);
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-3);
+  border-radius: max(0px, calc(var(--radius-sm) - var(--space-1)));
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
 }
+
+.entry-language button:hover,
+.entry-auth-picker button:hover,
 .entry-language [aria-pressed="true"],
 .entry-auth-picker [aria-pressed="true"] {
-  background: var(--white);
-  color: var(--pine);
-  font-weight: 700;
-  box-shadow: 0 1px 4px #163e3411;
+  background: var(--color-surface-hover);
+  color: var(--color-text);
 }
+
+.entry-language [aria-pressed="true"],
+.entry-auth-picker [aria-pressed="true"] {
+  color: var(--color-accent);
+  font-weight: 750;
+}
+
 .entry-auth {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
   overflow: hidden;
-  width: min(1120px, calc(100% - 36px));
-  margin: clamp(24px, 5vw, 70px) auto 40px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--white);
+  width: min(var(--entry-auth-width), calc(100% - 2 * var(--entry-gutter)));
+  margin: clamp(var(--space-5), 5vw, var(--space-8)) auto var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-card);
 }
+
 .entry-site h1 {
-  color: var(--pine);
-  font-family: var(--serif);
-  font-weight: 640;
-  line-height: 1.05;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-weight: 740;
+  line-height: 1.08;
   letter-spacing: -0.045em;
 }
+
+.entry-site h1[tabindex="-1"]:focus {
+  outline: none;
+}
+
 .entry-site .entry-action {
-  min-height: 45px;
-  padding-inline: 18px;
+  min-height: var(--control-height);
+  padding-inline: var(--space-5);
 }
-.entry-auth {
-  width: min(930px, calc(100% - 36px));
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
-}
+
 .entry-auth-art {
-  background: #15372f 71% center / cover no-repeat;
+  background: var(--color-sidebar) 71% center / cover no-repeat;
 }
+
 .entry-auth-content {
-  padding: clamp(24px, 4vw, 56px);
+  padding: clamp(var(--space-4), 4vw, var(--space-8));
 }
+
 .entry-auth-picker {
-  margin-bottom: 23px;
+  margin-bottom: var(--space-6);
 }
+
 .entry-auth-picker button {
+  min-height: 2.2rem;
   flex: 1;
-  min-height: 36px;
   font-weight: 650;
+  white-space: normal;
 }
+
 .entry-form h1,
 .entry-setup > h1 {
-  margin-bottom: 16px;
-  font-size: clamp(34px, 4.8vw, 55px);
+  margin-bottom: var(--space-4);
+  font-size: clamp(1.9rem, 4.8vw, 3.3rem);
 }
+
 .entry-form .field {
-  color: var(--ink);
-  font-size: 15px;
+  color: var(--color-text);
 }
+
 .entry-form :is(input, textarea) {
   display: block;
   width: 100%;
-  border: 1px solid #bfcbbe;
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: var(--white);
-  color: var(--ink);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-field);
+  color: var(--color-text);
+  font-size: 1rem;
   line-height: 1.5;
 }
+
 .entry-form textarea {
+  min-height: 3.8rem;
   resize: vertical;
-  min-height: 61px;
 }
+
 .entry-form .entry-action,
 .entry-error {
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
+
 .entry-form .entry-hint {
-  font-size: 13px;
-  color: var(--muted);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
 }
+
 .entry-error,
 .entry-quiz .entry-error {
-  border-radius: 6px;
-  padding: 8px 10px;
-  color: #792e25;
-  background: #fff2ed;
-  font-size: 14px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid
+    color-mix(in srgb, var(--color-negative) 36%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: var(--color-negative-muted);
+  color: var(--color-negative);
+  font-size: var(--font-size-sm);
 }
+
 .entry-setup {
-  max-width: 710px;
+  width: min(var(--entry-setup-width), calc(100% - 2 * var(--entry-gutter)));
   margin-inline: auto;
-  padding: 28px 18px 44px;
+  padding-block: var(--space-6) var(--space-8);
 }
+
 .entry-steps {
   display: flex;
   align-items: center;
-  gap: 8px 16px;
   flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-5);
   padding: 0;
-  margin: 0 0 24px;
   list-style: none;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--color-border);
 }
+
 .entry-steps li {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 0 9px;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
   border-bottom: 2px solid transparent;
-  font-size: 14px;
-  color: var(--muted);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
 }
+
 .entry-steps li[aria-current="step"] {
-  color: var(--pine);
-  border-bottom-color: var(--pine);
+  border-bottom-color: var(--color-accent);
+  color: var(--color-accent);
   font-weight: 700;
 }
+
 .entry-steps .ico {
-  width: 16px;
-  height: 16px;
+  width: 1em;
+  height: 1em;
+  color: var(--color-positive);
 }
+
 .entry-profile-form {
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: clamp(16px, 3vw, 32px);
-  background: var(--white);
+  padding: clamp(var(--space-4), 3vw, var(--space-7));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--gradient-card);
 }
+
 .entry-profile-form > p:first-child {
-  margin-bottom: 20px;
-  color: var(--muted);
+  margin-bottom: var(--space-5);
+  color: var(--color-muted);
 }
+
 .entry-quiz .actions {
   flex-wrap: wrap;
+}
+
+.entry-session-error {
+  width: min(var(--entry-setup-width), calc(100% - 2 * var(--entry-gutter)));
+  margin-inline: auto;
 }
 
 @media (max-width: 640px) {
   .entry-header,
   .entry-header-actions {
-    gap: 9px;
+    gap: var(--space-2);
   }
+
   .entry-header {
     flex-wrap: wrap;
   }
-  .entry-auth {
-    grid-template-columns: 1fr;
-    margin-top: 16px;
+
+  .entry-language button {
+    padding-inline: var(--space-2);
   }
+
+  .entry-auth {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: var(--space-4);
+  }
+
   .entry-auth-art {
-    min-height: 100px;
+    min-height: clamp(4.5rem, 18vw, 6rem);
     background-position: 70% 47%;
   }
-}
-
-.entry-session-error {
-  width: min(710px, calc(100% - 36px));
-  margin-inline: auto;
 }

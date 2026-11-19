@@ -5,8 +5,12 @@ import { useGame } from "../store.jsx";
 import { newId, points, typeCode } from "../game.js";
 import { houses } from "../content.js";
 import { QuestBrief } from "./QuestBrief.jsx";
+import { QuestList, Status } from "./QuestList.jsx";
 import { Avatar, Button, Dialog, Field, Heading, Icon } from "./ui.jsx";
 import "../community-ui.css";
+
+export { GameMasterDashboard as Overview } from "./GameMasterDashboard.jsx";
+export { QuestList } from "./QuestList.jsx";
 
 const finished = ["Behaald", "Niet behaald"];
 const adminFilters = ["Alles", "Ingeleverd", "Open", "Concepten", "Afgerond"];
@@ -14,11 +18,6 @@ const playerFilters = ["Alles", "Open", "Ingeleverd", "Afgerond"];
 const questGroups = ["Ingeleverd", "Open", "Afgerond"];
 const copy = {
   en: {
-    overview: "Overview",
-    needsReview: "Needs review",
-    viewQueue: "View review queue",
-    queueEmpty: "Submitted quests will appear here.",
-    questStatus: "Quest status",
     allQuests: "All quests",
     myQuests: "My quests",
     questScope: "Quest scope",
@@ -44,11 +43,6 @@ const copy = {
     },
   },
   nl: {
-    overview: "Overzicht",
-    needsReview: "Te beoordelen",
-    viewQueue: "Bekijk inzendingen",
-    queueEmpty: "Ingeleverde opdrachten verschijnen hier.",
-    questStatus: "Opdrachtstatus",
     allQuests: "Alle opdrachten",
     myQuests: "Mijn opdrachten",
     questScope: "Opdrachten weergeven",
@@ -81,59 +75,6 @@ function belongsToFilter(quest, filter) {
     (filter === "Afgerond"
       ? finished.includes(quest.state)
       : quest.state === filter)
-  );
-}
-
-function Status({ value }) {
-  const { t } = useI18n();
-  return (
-    <span
-      className={
-        "status " +
-        (value === "Ingeleverd"
-          ? "wait"
-          : value === "Niet behaald"
-            ? "bad"
-            : "")
-      }
-    >
-      {t(value)}
-    </span>
-  );
-}
-
-export function QuestList({ items }) {
-  const { t } = useI18n();
-  const { game, setModal } = useGame();
-  return items.length ? (
-    items.map((q) => (
-      <button
-        className="item"
-        key={q.id}
-        onClick={() => setModal({ kind: "quest", id: q.id })}
-      >
-        <span className={"tile " + q.style}>
-          <Icon name={q.icon} />
-        </span>
-        <span className="body">
-          <strong>{questText(t, q, "name")}</strong>
-          <span className="meta">
-            {exampleText(
-              t,
-              examples.players,
-              game.players.find((p) => p.id === q.playerId),
-              "name",
-            )}{" "}
-            · +{q.plus} / −{q.minus} pt
-          </span>
-        </span>
-        <span className="badgewrap">
-          <Status value={q.state} />
-        </span>
-      </button>
-    ))
-  ) : (
-    <div className="empty">{t("Geen opdrachten in deze selectie.")}</div>
   );
 }
 
@@ -187,87 +128,6 @@ function FilterBar({ label, choices, selected, onChange }) {
           {name}
         </button>
       ))}
-    </div>
-  );
-}
-
-export function Overview() {
-  const { language, t } = useI18n();
-  const words = copy[language];
-  const { game, navigate } = useGame();
-  const pending = game.quests.filter((quest) =>
-    belongsToFilter(quest, "Ingeleverd"),
-  );
-  const statusLinks = [
-    [
-      "Open",
-      game.quests.filter((quest) => belongsToFilter(quest, "Open")).length,
-    ],
-    ["Concepten", game.questDrafts?.length ?? 0],
-    [
-      "Afgerond",
-      game.quests.filter((quest) => belongsToFilter(quest, "Afgerond")).length,
-    ],
-  ];
-  const openFilter = (questFilter) => navigate("quests", { questFilter });
-  return (
-    <div className="quest-workspace">
-      <Heading title={words.overview}>
-        <Button
-          icon="plus"
-          onClick={() =>
-            navigate("questEditor", { questEditor: { returnPage: "home" } })
-          }
-        >
-          {t("Nieuwe opdracht")}
-        </Button>
-      </Heading>
-      <div className="work-overview">
-        <section>
-          <div className="work-section-heading">
-            <h2>
-              {words.needsReview}{" "}
-              <span className="work-count">{pending.length}</span>
-            </h2>
-            {pending.length > 0 && (
-              <Button kind="textbtn" onClick={() => openFilter("Ingeleverd")}>
-                {words.viewQueue}
-              </Button>
-            )}
-          </div>
-          <div className="work-list">
-            {pending.length ? (
-              <QuestList items={pending.slice(0, 5)} />
-            ) : (
-              <p className="empty">{words.queueEmpty}</p>
-            )}
-          </div>
-        </section>
-        <section>
-          <div className="work-section-heading">
-            <h2>{words.questStatus}</h2>
-          </div>
-          <div className="work-list work-status-list">
-            {statusLinks.map(([status, count]) => (
-              <button
-                key={status}
-                type="button"
-                onClick={() => openFilter(status)}
-              >
-                <span>{words.adminFilters[status]}</span>
-                <span className="work-count">{count}</span>
-                <Icon name="chev" />
-              </button>
-            ))}
-          </div>
-          <Button
-            kind="textbtn work-all-quests"
-            onClick={() => openFilter("Alles")}
-          >
-            {words.allQuests}
-          </Button>
-        </section>
-      </div>
     </div>
   );
 }
@@ -403,8 +263,10 @@ function QuestDraftList() {
 export function Players({ embedded = false }) {
   const { language, t } = useI18n();
   const words = copy[language];
-  const { game, gm, setModal } = useGame();
-  const [filter, setFilter] = useState("players");
+  const { game, gm, setModal, view } = useGame();
+  const [filter, setFilter] = useState(
+    view.peopleFilter === "characters" ? "characters" : "players",
+  );
   return (
     <div className="quest-workspace">
       {!embedded && <Heading title={t("Spelers")} />}
@@ -712,7 +574,7 @@ function AddDialog({ kind, close }) {
         },
       });
       if (result) {
-        navigate("players");
+        navigate("players", { peopleFilter: "characters" });
         setModal({ kind: "player", id: key });
       }
     }

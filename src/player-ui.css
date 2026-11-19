@@ -1,5 +1,12 @@
 .player-page-heading {
-  margin-bottom: clamp(18px, 3vw, 28px);
+  margin-block-end: var(--space-5);
+}
+
+.player-page-heading h1 {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-title);
+  line-height: 1.12;
 }
 
 .player-workspace,
@@ -7,27 +14,28 @@
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
   align-items: start;
-  gap: clamp(16px, 2.4vw, 28px);
+  gap: clamp(var(--space-4), 2.4vw, var(--space-7));
 }
 
 .player-stack {
   display: grid;
-  gap: clamp(16px, 2.4vw, 28px);
+  gap: clamp(var(--space-4), 2.4vw, var(--space-6));
   min-width: 0;
 }
 
 .player-surface {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--white);
-  padding: clamp(16px, 2.4vw, 26px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-card);
+  color: var(--color-text);
+  padding: clamp(var(--space-4), 2.4vw, var(--space-6));
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .player-muted {
-  color: var(--muted);
-  font-size: 0.875rem;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm, 0.875rem);
 }
 
 .player-section-heading {
@@ -35,44 +43,46 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
-  gap: 4px 12px;
-  margin-bottom: 12px;
+  gap: var(--space-1) var(--space-3);
+  margin-block-end: var(--space-3);
 }
 
 .player-section-heading h2,
 .player-surface h2 {
-  font-size: clamp(21px, 1.8vw, 26px);
-  line-height: 1.15;
+  font-family: var(--font-display);
+  font-size: var(--font-size-section);
+  line-height: 1.2;
 }
 
 .player-room .actions,
 .player-profile .actions {
   flex-wrap: wrap;
-  gap: 6px 14px;
+  gap: var(--space-2) var(--space-4);
 }
 
 .player-room .textbtn,
 .player-profile .textbtn {
   white-space: normal;
-  text-align: left;
+  text-align: start;
 }
 
 .player-next {
-  border-top: 2px solid var(--pine);
+  border-color: color-mix(in srgb, var(--color-info) 20%, var(--color-border));
+  background: var(--gradient-hero);
 }
 
 .player-next > h3 {
-  font-size: 1.1rem;
-  margin-top: 14px;
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  margin-block-start: var(--space-3);
 }
 
 .player-next > p {
-  margin-top: 5px;
+  margin-block-start: var(--space-2);
   white-space: pre-wrap;
 }
 
 .player-next .actions {
-  margin-top: 16px;
+  margin-block-start: var(--space-4);
 }
 
 .player-house {
@@ -82,20 +92,20 @@
 
 .player-house-art {
   height: clamp(104px, 11vw, 152px);
-  background-color: var(--soft);
+  background-color: var(--color-surface-raised);
   background-size: cover;
   background-position: center;
 }
 
 .player-house-content {
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .player-house-identity,
 .player-profile-identity {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .player-profile-identity .avatar {
@@ -103,7 +113,7 @@
 }
 
 .player-house .actions {
-  margin-top: 9px;
+  margin-block-start: var(--space-2);
 }
 
 .player-style {
@@ -114,7 +124,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  gap: var(--space-2);
+  padding: var(--space-4);
   cursor: pointer;
   list-style: none;
 }
@@ -124,7 +135,7 @@
 }
 
 .player-style > summary:focus-visible {
-  outline: 2px solid var(--pine);
+  outline: 2px solid var(--color-focus, var(--color-accent));
   outline-offset: -2px;
   border-radius: inherit;
 }
@@ -134,7 +145,8 @@
 }
 
 .player-style-content {
-  padding: 0 16px 11px;
+  padding-inline: var(--space-4);
+  padding-block-end: var(--space-3);
 }
 
 .player-style-facts,
@@ -144,51 +156,52 @@
 
 .player-style-facts > div,
 .player-answers dl > div {
-  padding: 9px 0;
-  border-top: 1px solid var(--line);
+  padding-block: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
 }
 
 .player-style-facts dd,
 .player-profile-facts dd,
 .player-answers dd {
-  margin: 1px 0 0;
+  margin: var(--space-1) 0 0;
 }
 
 .player-style-facts dt,
 .player-profile-facts dt,
 .player-answers dt {
-  color: var(--muted);
-  font-size: 0.875rem;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm, 0.875rem);
 }
 
 .player-welcome-houses {
-  margin-top: clamp(22px, 3vw, 34px);
+  margin-block-start: clamp(var(--space-5), 3vw, var(--space-7));
 }
 
 .player-welcome-houses .journeyNote {
-  margin: 6px 0 14px;
+  margin: var(--space-2) 0 var(--space-4);
 }
 
 .player-profile-card {
-  margin-bottom: clamp(16px, 2.4vw, 28px);
+  margin-block-end: clamp(var(--space-4), 2.4vw, var(--space-6));
+  background: var(--gradient-hero);
 }
 
 .player-profile-card > .actions {
-  margin-top: 8px;
+  margin-block-start: var(--space-2);
 }
 
 .player-bio {
-  margin-top: 14px;
+  margin-block-start: var(--space-4);
   white-space: pre-wrap;
 }
 
 .player-profile-facts {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: 12px 20px;
-  margin: 13px 0 0;
-  padding-top: 13px;
-  border-top: 1px solid var(--line);
+  gap: var(--space-3) var(--space-5);
+  margin: var(--space-3) 0 0;
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
 }
 
 .player-profile-facts dd {
@@ -196,25 +209,29 @@
 }
 
 .player-quiz-result h3 {
-  margin-bottom: 4px;
-  color: var(--pine);
+  margin-block-end: var(--space-1);
+  color: var(--color-accent);
   font-size: 1.2rem;
 }
 
 .player-quiz-result .trait-list {
-  margin-top: 18px;
+  margin-block-start: var(--space-5);
 }
 
 .player-quiz-result .trait-track {
-  background: var(--soft);
+  background: color-mix(
+    in srgb,
+    var(--color-info) 16%,
+    var(--color-surface-raised)
+  );
 }
 
 .player-quiz-note {
-  margin-top: 15px;
+  margin-block-start: var(--space-4);
 }
 
 .player-answers > p {
-  margin: 4px 0 11px;
+  margin: var(--space-1) 0 var(--space-3);
 }
 
 .player-answers dd {

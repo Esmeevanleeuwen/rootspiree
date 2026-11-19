@@ -3,7 +3,7 @@ import { api } from "../api.js";
 import valley from "../assets/vallei.webp";
 import { agreement, statements } from "../content.js";
 import { translate } from "../i18n.jsx";
-import { Button, Field, Icon } from "./ui.jsx";
+import { BrandMark, Button, Field, Icon } from "./ui.jsx";
 import { LandingNavigation, LandingPage } from "./LandingPage.jsx";
 import "../entry.css";
 
@@ -144,13 +144,7 @@ function Wordmark({ onHome, label }) {
       onClick={onHome}
       aria-label={label}
     >
-      <svg aria-hidden="true" viewBox="0 0 42 48">
-        <path fill="#173f33" d="M21 1 40 12v24L21 47 2 36V12z" />
-        <g fill="none" stroke="#d8bc83" strokeWidth="1.4">
-          <path d="m21 7 13 8v17l-13 8-13-8V15z" />
-          <path d="m10 30 8-14 5 9 3-5 7 12M16 32l5-9 5 9" />
-        </g>
-      </svg>
+      <BrandMark />
       <span>
         LevelUp <small>WORLD</small>
       </span>

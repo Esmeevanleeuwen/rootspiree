@@ -1,0 +1,325 @@
+.command-center {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-4);
+}
+
+.app-content .command-center > .heading {
+  margin-bottom: var(--space-1);
+}
+
+.command-hero {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  align-items: center;
+  padding: clamp(var(--space-4), 2.5vw, var(--space-6));
+  border: 1px solid color-mix(in srgb, var(--color-text) 12%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-hero);
+}
+
+.command-hero-copy {
+  z-index: 1;
+  min-width: 0;
+}
+
+.command-chapter {
+  min-height: var(--space-5);
+  padding: 0;
+  color: var(--color-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.command-chapter:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.command-hero h2 {
+  max-width: 20ch;
+  margin: var(--space-2) 0;
+  font-family: var(--font-sans);
+  font-size: clamp(var(--font-size-section), 2.8vw, var(--font-size-title));
+  font-weight: 750;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.command-hero p {
+  max-width: 50ch;
+  margin-bottom: var(--space-4);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.command-hero .actions {
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.command-mark {
+  position: absolute;
+  z-index: -1;
+  inset-inline-end: 9%;
+  bottom: -10%;
+  width: clamp(8rem, 19vw, 15rem);
+  aspect-ratio: 1;
+  transform: rotate(-15deg);
+  color: color-mix(in srgb, var(--color-accent) 34%, transparent);
+  pointer-events: none;
+}
+
+.command-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.command-stat,
+.command-card {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-card);
+}
+
+.command-stat {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  align-items: start;
+  gap: var(--space-3) var(--space-2);
+  padding: var(--space-4);
+  color: var(--color-muted);
+  text-align: left;
+  font-size: var(--font-size-sm);
+  font-weight: 550;
+}
+
+.command-stat:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent) 55%,
+    var(--color-border)
+  );
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.command-stat > span {
+  overflow-wrap: anywhere;
+}
+
+.command-stat .ico {
+  width: 1rem;
+  height: 1rem;
+}
+
+.command-stat strong {
+  grid-column: 1 / -1;
+  color: var(--color-text);
+  font-size: var(--font-size-title);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.command-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.42fr) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.command-card {
+  padding: var(--space-4);
+}
+
+.command-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-3);
+}
+
+.command-card-head h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.command-card-head h2 .ico {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--color-accent);
+}
+
+.command-card-head .textbtn {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  text-decoration: none;
+}
+
+.command-card-head .textbtn:hover {
+  background: var(--color-surface-hover);
+}
+
+.command-review .work-list {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.command-review .work-list > .item {
+  padding-inline: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.command-empty {
+  min-height: var(--space-8);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.command-drafts {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-1);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  text-align: left;
+}
+
+.command-drafts span {
+  flex: 1;
+}
+
+.command-drafts strong {
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.command-drafts .ico {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.command-drafts:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.command-leaderboard {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.command-leaderboard li {
+  border-top: 1px solid var(--color-border);
+}
+
+.command-leaderboard button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 1.65em auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  color: var(--color-text);
+  text-align: left;
+  font-size: var(--font-size-sm);
+}
+
+.command-leaderboard button:hover {
+  background: var(--color-surface-hover);
+}
+
+.command-leaderboard button strong {
+  overflow-wrap: anywhere;
+}
+
+.command-rank,
+.command-points {
+  color: var(--color-accent);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.command-leaderboard .avatar {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: var(--radius-sm);
+}
+
+.command-houses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.command-houses .secondary {
+  min-height: 2.15rem;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+}
+
+.command-houses .ico {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--color-positive);
+}
+
+@media (max-width: 720px) {
+  .command-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .command-mark {
+    inset-inline-end: 4%;
+    opacity: 0.75;
+  }
+}
+
+@media (max-width: 460px) {
+  .command-hero,
+  .command-card {
+    padding: var(--space-4);
+  }
+
+  .command-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .command-stat {
+    padding: var(--space-3);
+  }
+
+  .command-mark {
+    opacity: 0.45;
+  }
+}

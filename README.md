@@ -28,6 +28,17 @@ The admin logs in on the same page as players and can view accounts, assign ques
 
 To create a player, choose **Create an account**. Enter a name, email and password, then answer four optional questions about yourself. The existing 16-statement quiz follows. Once the quiz is complete, the house journey begins. The language switch is available in the welcome screens and the game.
 
+## Customize the theme
+
+Edit the variables at the top of [`src/theme.css`](src/theme.css). The public pages, Game Master dashboard and player screens all use this file.
+
+- Change `--color-accent`, `--color-accent-hover` and `--color-on-accent` for the primary buttons.
+- Change `--color-bg`, `--color-sidebar`, `--color-surface` and `--color-text` for the main colors.
+- Change `--color-hero-start`, `--color-hero-middle` and `--color-hero-end` for the banner gradient.
+- Change `--font-sans`, `--font-display`, `--radius-*`, `--space-*` and `--sidebar-width` for typography and layout.
+
+The dev server applies stylesheet edits as you save them.
+
 ## Run a production build
 
 ```sh
