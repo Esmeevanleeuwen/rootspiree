@@ -55,7 +55,7 @@ SQLite stores accounts, sessions, profiles and gameplay in `data/rootspiree.sqli
 Import this repository as a Vite project. Vercel builds the frontend from `main` and runs the handlers under `api/`. Use Node.js 24.x or a newer Vercel-supported version.
 
 1. Apply the SQL under `supabase/migrations/` to create the private `levelup` schema in Supabase.
-2. Set a strong password and enable login for the `levelup_app` database role. Copy the Supabase transaction pooler URI from the Connect dialog and use `levelup_app.<project-ref>` as its username. Save the URI as the sensitive Production variable `LEVELUP_DATABASE_URL` in Vercel. The game verifies TLS and keeps this connection server-side. Use a separate database for Preview if you enable its backend.
+2. Set a strong password and enable login for the `levelup_app` database role. Copy the Supabase transaction pooler URI from the Connect dialog and use `levelup_app.<project-ref>` as its username. Save the URI as the sensitive Production variable `LEVELUP_DATABASE_URL` in Vercel. Download the CA certificate from Supabase Database Settings under SSL Configuration and paste the full PEM into the Production variable `LEVELUP_DATABASE_CA`. The game verifies TLS and keeps this connection server-side. Use a separate database for Preview if you enable its backend.
 3. Set the Production environment variables `ADMIN_EMAIL` and `ADMIN_PASSWORD` if you want a first Game Master account. Use a unique password of at least 12 characters. `ADMIN_NAME` is optional and defaults to Game Master.
 4. Redeploy. Open the game and log in once with the Game Master credentials to initialize the account. Then remove the bootstrap variables and redeploy again.
 

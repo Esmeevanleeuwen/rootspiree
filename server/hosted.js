@@ -59,7 +59,11 @@ export function createHostedApi({
   }
 
   return createApi({
-    database: database ?? openPostgres(process.env.LEVELUP_DATABASE_URL),
+    database:
+      database ??
+      openPostgres(process.env.LEVELUP_DATABASE_URL, {
+        ca: process.env.LEVELUP_DATABASE_CA?.trim(),
+      }),
     origin,
     secureCookies: true,
     authAddress: requestAddress,
