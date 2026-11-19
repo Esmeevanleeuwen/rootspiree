@@ -7,12 +7,24 @@ LevelUp World is a social game about practising personal goals. Players choose a
 Use Node.js 22.13 or newer.
 
 ```sh
+cp -n .env.example .env
 npm ci
 npm run admin:create
 npm run dev
 ```
 
-The admin setup asks for an email address and a password of at least 12 characters. Use those credentials on the same login page as players. The admin can see account names, emails and signup status, assign quests and review submissions. To change the admin password, run the setup again with the same email address. Existing sessions for that admin are signed out.
+On Windows PowerShell, use these commands.
+
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+npm.cmd ci
+npm.cmd run admin:create
+npm.cmd run dev
+```
+
+The template has the local server and database settings. The admin setup asks for your email and a password of at least 12 characters. To skip the prompts, enter your own values for `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your local `.env` before running the setup. You can clear those two values from the file once the account is created.
+
+The admin logs in on the same page as players and can view accounts, assign quests and review submissions. To change the admin password, run setup again with the same email address. Existing sessions for that admin are signed out.
 
 To create a player, choose **Create an account**. Enter a name, email and password, then answer four optional questions about yourself. The existing 16-statement quiz follows. Once the quiz is complete, the house journey begins. The language switch is available in the welcome screens and the game.
 
