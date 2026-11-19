@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api.js";
 import { houses } from "./content.js";
+import { landingCopy } from "./landing-copy.js";
 import { I18nProvider, useI18n } from "./i18n.jsx";
 import { GameProvider, useGame } from "./store.jsx";
 import { Button, Heading, Icon } from "./components/ui.jsx";
@@ -97,6 +98,7 @@ const tabs = [
 const routes = {
   landing: "",
   auth: "#/login",
+  register: "#/signup",
   onboard: "#/setup",
   game: "#/play",
 };
@@ -403,6 +405,7 @@ export default function App() {
   }, []);
   useEffect(() => {
     document.documentElement.lang = language;
+    document.title = landingCopy[language].pageTitle;
   }, [language]);
   useEffect(() => {
     const controller = new AbortController();
@@ -445,20 +448,16 @@ export default function App() {
     }
   }
 
-  let screen;
-  if (account)
-    screen =
-      route === "landing"
-        ? "landing"
-        : account.onboardingComplete
-          ? "game"
-          : "onboard";
-  else screen = route === "landing" ? "landing" : "auth";
+  let screen = route;
+  if (route !== "landing") {
+    if (account) screen = account.onboardingComplete ? "game" : "onboard";
+    else if (route !== "register") screen = "auth";
+  }
   useEffect(() => {
     if (status === "ready" && route !== screen) go(screen);
   }, [status, route, screen]);
 
-  if (status !== "ready")
+  if (status !== "ready" && screen !== "landing")
     return (
       <main className="app-loading">
         <p role={status === "error" ? "alert" : "status"}>

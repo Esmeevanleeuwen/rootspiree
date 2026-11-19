@@ -1,19 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import valley from "../assets/vallei.webp";
-import riverGarden from "../assets/riet.webp";
 import { agreement, statements } from "../content.js";
 import { translate } from "../i18n.jsx";
 import { Button, Field, Icon } from "./ui.jsx";
+import { LandingNavigation, LandingPage } from "./LandingPage.jsx";
 import "../entry.css";
 
 const copy = {
   en: {
     language: "Language",
     home: "Back to the homepage",
-    title: "Find your place in LevelUp World",
-    invitation:
-      "Choose something you want to get better at. Take on small quests, practice with other players, and get feedback from your Game Master.",
     login: "Log in",
     logout: "Log out",
     create: "Create an account",
@@ -39,14 +36,10 @@ const copy = {
     answerRequired: "Choose one answer for each statement on this page.",
     part: (current, pages) => `Part ${current} of ${pages}`,
     range: (start, end, total) => `Statements ${start}–${end} of ${total}`,
-    art: "Sunrise over the waterways of the Floating Garden.",
   },
   nl: {
     language: "Taal",
     home: "Terug naar de homepage",
-    title: "Vind jouw plek in LevelUp World",
-    invitation:
-      "Kies iets waarin je beter wilt worden. Ga aan de slag met kleine opdrachten, oefen met andere spelers en krijg feedback van je spelleider.",
     login: "Inloggen",
     logout: "Uitloggen",
     create: "Account aanmaken",
@@ -72,7 +65,6 @@ const copy = {
     answerRequired: "Kies een antwoord voor elke stelling op deze pagina.",
     part: (current, pages) => `Deel ${current} van ${pages}`,
     range: (start, end, total) => `Stellingen ${start}–${end} van ${total}`,
-    art: "Zonsopgang boven de waterwegen van de Drijftuin.",
   },
 };
 
@@ -166,37 +158,6 @@ function Wordmark({ onHome, label }) {
   );
 }
 
-function Landing({ account, strings, go }) {
-  const destination = account
-    ? account.onboardingComplete
-      ? "game"
-      : "onboard"
-    : "auth";
-  const label = account
-    ? account.onboardingComplete
-      ? strings.enter
-      : strings.resume
-    : strings.login;
-  return (
-    <main className="entry-home">
-      <div className="entry-home-copy">
-        <h1>{strings.title}</h1>
-        <p>{strings.invitation}</p>
-        <Button
-          kind="primary entry-action"
-          icon="compass"
-          onClick={() => go(destination)}
-        >
-          {label}
-        </Button>
-      </div>
-      <figure className="entry-home-art">
-        <img src={riverGarden} alt={strings.art} width="768" height="512" />
-      </figure>
-    </main>
-  );
-}
-
 function Problem({ error, language }) {
   if (!error) return null;
   const localized = errors[error] ?? [
@@ -210,8 +171,7 @@ function Problem({ error, language }) {
   );
 }
 
-function Auth({ strings, language, go, onAccount }) {
-  const [mode, setMode] = useState("login");
+function Auth({ strings, language, go, onAccount, mode }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const isSignup = mode === "register";
@@ -219,6 +179,7 @@ function Auth({ strings, language, go, onAccount }) {
   const emailField = useRef(null);
   const submitLock = useRef(false);
   useEffect(() => {
+    setError("");
     if (isSignup) emailField.current?.focus();
   }, [isSignup]);
   async function submit(event) {
@@ -255,8 +216,7 @@ function Auth({ strings, language, go, onAccount }) {
   }
   function choose(nextMode) {
     if (nextMode === mode) return;
-    setMode(nextMode);
-    setError("");
+    go(nextMode === "register" ? "register" : "auth");
   }
   return (
     <main className="entry-auth">
@@ -630,18 +590,42 @@ export function Entry({
 }) {
   const strings = copy[language];
   const focus = useRef(null);
+  const isLanding = screen === "landing";
+  const authMode = screen === "register" ? "register" : "login";
   useEffect(() => {
-    const heading = focus.current?.querySelector("h1");
+    const sectionId = isLanding ? window.location.hash.slice(1) : "";
+    const section = ["how-it-works", "example-quest"].includes(sectionId)
+      ? document.getElementById(sectionId)
+      : null;
+    const heading =
+      section?.querySelector("h2") ?? focus.current?.querySelector("h1");
     heading?.setAttribute("tabindex", "-1");
     heading?.focus({ preventScroll: true });
-    if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
-  }, [screen]);
+    if (section) section.scrollIntoView?.();
+    else window.scrollTo(0, 0);
+  }, [screen, isLanding]);
+  function openHome() {
+    go("landing");
+    if (isLanding) {
+      window.scrollTo(0, 0);
+      focus.current?.querySelector("h1")?.focus({ preventScroll: true });
+    }
+  }
   return (
-    <div className="entry-site" ref={focus}>
+    <div
+      className={"entry-site" + (isLanding ? " landing-site" : "")}
+      ref={focus}
+    >
       <header className="entry-header">
-        <Wordmark label={strings.home} onHome={() => go("landing")} />
+        <Wordmark label={strings.home} onHome={openHome} />
+        {isLanding && <LandingNavigation language={language} />}
         <div className="entry-header-actions">
           <LanguageSelector language={language} setLanguage={setLanguage} />
+          {isLanding && !account && (
+            <Button kind="landing-login" onClick={() => go("auth")}>
+              {strings.login}
+            </Button>
+          )}
           {account && onLogout && (
             <Button kind="textbtn" onClick={onLogout}>
               {strings.logout}
@@ -654,15 +638,21 @@ export function Entry({
           {authError}
         </p>
       )}
-      {screen === "landing" && (
-        <Landing account={account} strings={strings} go={go} />
+      {isLanding && (
+        <LandingPage
+          account={account}
+          language={language}
+          accountCopy={strings}
+          go={go}
+        />
       )}
-      {screen === "auth" && (
+      {(screen === "auth" || screen === "register") && (
         <Auth
           strings={strings}
           language={language}
           go={go}
           onAccount={onAccount}
+          mode={authMode}
         />
       )}
       {screen === "onboard" && account && (

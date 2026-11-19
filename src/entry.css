@@ -59,7 +59,6 @@
   font-weight: 700;
   box-shadow: 0 1px 4px #163e3411;
 }
-.entry-home,
 .entry-auth {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -70,13 +69,6 @@
   border-radius: 16px;
   background: var(--white);
 }
-.entry-home-copy {
-  display: grid;
-  align-content: center;
-  justify-items: start;
-  min-height: min(590px, 72vh);
-  padding: clamp(32px, 5.7vw, 82px);
-}
 .entry-site h1 {
   color: var(--pine);
   font-family: var(--serif);
@@ -84,35 +76,9 @@
   line-height: 1.05;
   letter-spacing: -0.045em;
 }
-.entry-home-copy h1 {
-  max-width: 12ch;
-  font-size: clamp(40px, 5.4vw, 77px);
-}
-.entry-home-copy p {
-  max-width: 42ch;
-  margin-top: 22px;
-  color: var(--muted);
-  font-size: clamp(16px, 1.6vw, 19px);
-}
 .entry-site .entry-action {
   min-height: 45px;
   padding-inline: 18px;
-}
-.entry-home-copy .entry-action {
-  margin-top: 26px;
-}
-.entry-home-art {
-  position: relative;
-  min-height: 220px;
-  margin: 0;
-  background: #567a6c;
-}
-.entry-home-art img {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 58% center;
 }
 .entry-auth {
   width: min(930px, calc(100% - 36px));
@@ -226,17 +192,9 @@
   .entry-header {
     flex-wrap: wrap;
   }
-  .entry-home,
   .entry-auth {
     grid-template-columns: 1fr;
     margin-top: 16px;
-  }
-  .entry-home-copy {
-    min-height: auto;
-    padding: 33px 24px;
-  }
-  .entry-home-copy h1 {
-    max-width: 16ch;
   }
   .entry-auth-art {
     min-height: 100px;

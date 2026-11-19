@@ -1,6 +1,6 @@
 import { questText, useI18n } from "../i18n.jsx";
 
-export function QuestBrief({ quest, submissionId }) {
+export function QuestBrief({ quest, submissionId, heading: Heading = "h3" }) {
   const { t } = useI18n();
   const action = questText(t, quest, "desc");
   const structured = Boolean(
@@ -10,19 +10,19 @@ export function QuestBrief({ quest, submissionId }) {
     <div className="quest-brief">
       {action && (
         <div>
-          {structured && <h3>{t("Wat je gaat proberen")}</h3>}
+          {structured && <Heading>{t("Wat je gaat proberen")}</Heading>}
           <p>{action}</p>
         </div>
       )}
       {quest.submissionPrompt && (
         <div>
-          <h3>{t("Wat je instuurt")}</h3>
+          <Heading>{t("Wat je instuurt")}</Heading>
           <p id={submissionId}>{quest.submissionPrompt}</p>
         </div>
       )}
       {quest.completionCriteria && (
         <div>
-          <h3>{t("Je bent klaar als")}</h3>
+          <Heading>{t("Je bent klaar als")}</Heading>
           <p>{quest.completionCriteria}</p>
         </div>
       )}
