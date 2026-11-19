@@ -4,10 +4,10 @@ import { openDatabase, publicAccount } from "./accounts.js";
 import { handleWorld, setupWorld } from "./world.js";
 import { emptyJourney } from "../src/game.js";
 
-function worldFixture(t) {
+function worldFixture(t, setup = setupWorld) {
   const db = openDatabase(":memory:");
-  setupWorld(db);
   t.after(() => db.close());
+  setup(db);
   const insert = db.prepare(`
     INSERT INTO accounts (
       id, email, name, role, password_hash, profile_json, profile_complete,
@@ -19,6 +19,7 @@ function worldFixture(t) {
     ["casey", "player", 1],
     ["unready", "player", 0],
     ["admin", "admin", 1],
+    ["other-admin", "admin", 1],
   ]) {
     insert.run(
       id,
@@ -177,4 +178,197 @@ test("likes retain the public count without exposing which other accounts voted"
   const [after] = request("alex", { action: "like", id: "post-1" }).game.posts;
   assert.deepEqual(after.votes, {});
   assert.equal(after.likes, 1);
+});
+
+test("an unfinished draft stays private, can be edited, and is removed when assigned", (t) => {
+  const { request } = worldFixture(t);
+  const draft = { id: "draft-1", playerId: null, name: "Follow the thread" };
+  assert.throws(
+    () => request("alex", { action: "saveQuestDraft", quest: draft }),
+    {
+      code: "forbidden",
+    },
+  );
+  const saved = request("admin", {
+    action: "saveQuestDraft",
+    quest: draft,
+  }).game;
+  assert.deepEqual(saved.questDrafts, [
+    {
+      ...draft,
+      desc: "",
+      submissionPrompt: "",
+      completionCriteria: "",
+      sharedGoalId: null,
+      plus: 10,
+      minus: 2,
+    },
+  ]);
+  assert.equal(saved.quests.length, 0);
+  assert.equal(request("alex").game.questDrafts, undefined);
+  assert.deepEqual(request("other-admin").game.questDrafts, []);
+  request("other-admin", { action: "deleteQuestDraft", id: draft.id });
+  assert.equal(request("admin").game.questDrafts.length, 1);
+  assert.throws(
+    () => request("other-admin", { action: "saveQuestDraft", quest: draft }),
+    {
+      code: "conflict",
+    },
+  );
+
+  const quest = {
+    ...saved.questDrafts[0],
+    playerId: "alex",
+    desc: "Ask a follow-up in your next conversation.",
+    submissionPrompt: "Send the question and what you learned.",
+    completionCriteria:
+      "The question follows up on what the other person said.",
+  };
+  request("admin", { action: "saveQuestDraft", quest });
+  assert.deepEqual(request("admin").game.questDrafts, [quest]);
+  assert.throws(
+    () =>
+      request("admin", {
+        action: "quest",
+        quest: { ...quest, completionCriteria: "" },
+      }),
+    { code: "invalid_input" },
+  );
+  assert.deepEqual(request("admin").game.questDrafts, [quest]);
+  assert.throws(() => request("other-admin", { action: "quest", quest }), {
+    code: "conflict",
+  });
+
+  const assigned = request("admin", { action: "quest", quest });
+  assert.equal(assigned.questId, quest.id);
+  assert.deepEqual(assigned.game.questDrafts, []);
+  assert.equal(assigned.game.quests.length, 1);
+  assert.equal(
+    request("alex").game.quests[0].submissionPrompt,
+    quest.submissionPrompt,
+  );
+  assert.equal(
+    request("alex").game.quests[0].completionCriteria,
+    quest.completionCriteria,
+  );
+  assert.equal(request("casey").game.quests[0].submissionPrompt, undefined);
+  assert.equal(request("casey").game.quests[0].completionCriteria, undefined);
+  assert.equal(
+    request("admin", { action: "quest", quest }).game.quests.length,
+    1,
+  );
+  assert.throws(
+    () =>
+      request("admin", {
+        action: "quest",
+        quest: { ...quest, playerId: "casey" },
+      }),
+    { code: "conflict" },
+  );
+});
+
+test("an assignment can link only to a currently shared goal of the recipient", (t) => {
+  const { request } = worldFixture(t);
+  const goal = {
+    id: "practice-listening",
+    kind: "voice",
+    text: "Listen well",
+    situation: "At home",
+    action: "Ask one question",
+    sign: "Follow up on something the other person said",
+    shared: true,
+  };
+  const journey = {
+    ...emptyJourney(),
+    stage: "room",
+    house: "nacht",
+    activeGoal: goal.id,
+    goals: [goal],
+  };
+  request("alex", { action: "journey", journey });
+  const quest = {
+    id: "assigned",
+    playerId: "alex",
+    name: "Ask one question",
+    desc: "Listen and follow up.",
+    submissionPrompt: "Summarize the reply.",
+    completionCriteria: "The question refers to something you heard.",
+    sharedGoalId: goal.id,
+    plus: 10,
+    minus: 2,
+  };
+  assert.throws(
+    () =>
+      request("admin", {
+        action: "quest",
+        quest: { ...quest, playerId: "casey" },
+      }),
+    { code: "conflict" },
+  );
+
+  request("admin", { action: "saveQuestDraft", quest });
+  request("alex", {
+    action: "journey",
+    journey: { ...journey, goals: [{ ...goal, shared: false }] },
+  });
+  assert.throws(() => request("admin", { action: "quest", quest }), {
+    code: "conflict",
+  });
+  assert.deepEqual(request("admin").game.questDrafts, [quest]);
+  assert.equal(request("admin").game.quests.length, 0);
+  request("alex", { action: "journey", journey });
+  const { game } = request("admin", { action: "quest", quest });
+  assert.equal(game.quests[0].sharedGoalId, goal.id);
+  assert.equal(request("alex").game.quests[0].sharedGoalId, undefined);
+  assert.equal(
+    request("alex", {
+      action: "exercise",
+      id: "exercise-1",
+      goalId: goal.id,
+    }).questId,
+    "exercise-1",
+  );
+});
+
+test("opening a previous world updates the schema and preserves its quests", (t) => {
+  const { db, request } = worldFixture(t, (db) => {
+    db.exec(`
+      CREATE TABLE world_quests (
+        id TEXT PRIMARY KEY,
+        player_id TEXT NOT NULL,
+        goal_id TEXT,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL,
+        state TEXT NOT NULL,
+        plus INTEGER NOT NULL,
+        minus INTEGER NOT NULL,
+        evidence TEXT,
+        feedback TEXT,
+        private_steps TEXT
+      );
+      INSERT INTO world_quests (id, player_id, name, description, state, plus, minus)
+        VALUES ('old-quest', 'alex', 'Old quest', 'Old instructions', 'Open', 10, 2);
+    `);
+    setupWorld(db);
+  });
+  setupWorld(db);
+  const [old] = request("alex").game.quests;
+  assert.equal(old.desc, "Old instructions");
+  assert.equal(old.submissionPrompt, undefined);
+  assert.equal(old.completionCriteria, undefined);
+  const { questId } = request("admin", {
+    action: "quest",
+    quest: {
+      id: "new",
+      playerId: "alex",
+      name: "New quest",
+      desc: "Use the current editor.",
+      submissionPrompt: "Record an outcome.",
+      completionCriteria: "Summarize one observation.",
+      plus: 10,
+      minus: 2,
+    },
+  });
+  assert.equal(questId, "new");
+  assert.equal(request("alex").game.quests.length, 2);
 });

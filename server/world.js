@@ -52,6 +52,12 @@ export function setupWorld(db) {
     );
     CREATE UNIQUE INDEX IF NOT EXISTS world_open_exercise
       ON world_quests (player_id, goal_id) WHERE state = 'Open' AND goal_id IS NOT NULL;
+    CREATE TABLE IF NOT EXISTS world_quest_drafts (
+      id TEXT PRIMARY KEY,
+      admin_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS world_posts (
       id TEXT PRIMARY KEY,
       player_id TEXT NOT NULL,
@@ -63,6 +69,7 @@ export function setupWorld(db) {
       PRIMARY KEY (post_id, account_id)
     );
   `);
+  addQuestAuthoringColumns(db);
   const npc = examples.players.find((player) => player.npc);
   db.prepare(
     `
@@ -70,6 +77,32 @@ export function setupWorld(db) {
     VALUES (?, ?, ?, ?, ?)
   `,
   ).run(npc.id, npc.name, npc.role, npc.av, npc.desc);
+}
+
+function addQuestAuthoringColumns(db) {
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    const columns = new Set(
+      db
+        .prepare("PRAGMA table_info(world_quests)")
+        .all()
+        .map(({ name }) => name),
+    );
+    const additions = {
+      submission_prompt: "TEXT",
+      completion_criteria: "TEXT",
+      shared_goal_id: "TEXT",
+      assigned_by: "TEXT REFERENCES accounts(id) ON DELETE SET NULL",
+    };
+    for (const [name, type] of Object.entries(additions)) {
+      if (!columns.has(name))
+        db.exec(`ALTER TABLE world_quests ADD COLUMN ${name} ${type}`);
+    }
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 function requireInput(valid) {
@@ -264,6 +297,7 @@ function readPlayers(db, account) {
 
 function readGame(db, account) {
   const players = readPlayers(db, account);
+  const isAdmin = account.role === "admin";
   const roster = new Set(players.map((player) => player.id));
   const quests = db
     .prepare("SELECT * FROM world_quests ORDER BY rowid")
@@ -271,7 +305,7 @@ function readGame(db, account) {
     .filter((row) => roster.has(row.player_id))
     .map((row) => {
       const own = row.player_id === account.id;
-      const canReadSubmission = own || account.role === "admin";
+      const canReadSubmission = own || isAdmin;
       return {
         id: row.id,
         playerId: row.player_id,
@@ -288,7 +322,15 @@ function readGame(db, account) {
           desc: row.description,
           evidence: row.evidence,
           feedback: row.feedback,
+          ...(row.submission_prompt && {
+            submissionPrompt: row.submission_prompt,
+          }),
+          ...(row.completion_criteria && {
+            completionCriteria: row.completion_criteria,
+          }),
         }),
+        ...(isAdmin &&
+          row.shared_goal_id && { sharedGoalId: row.shared_goal_id }),
       };
     });
   const voter = account.role === "admin" ? "gm" : account.id;
@@ -309,7 +351,16 @@ function readGame(db, account) {
       likes: row.total - row.voted,
       votes: row.voted ? { [voter]: true } : {},
     }));
-  return { players, quests, posts };
+  const game = { players, quests, posts };
+  if (isAdmin) {
+    game.questDrafts = db
+      .prepare(
+        "SELECT content FROM world_quest_drafts WHERE admin_id = ? ORDER BY updated_at DESC, rowid DESC",
+      )
+      .all(account.id)
+      .map(({ content }) => JSON.parse(content));
+  }
+  return game;
 }
 
 function questOwnerExists(db, owner) {
@@ -391,28 +442,115 @@ function addPost(db, account, body) {
   );
 }
 
-function addQuest(db, account, body) {
+function optionalId(value) {
+  return value == null || value === "" ? null : id(value);
+}
+
+function questInput(value, draft = false) {
+  const quest = record(value);
+  const structured =
+    Object.hasOwn(quest, "submissionPrompt") ||
+    Object.hasOwn(quest, "completionCriteria");
+  return {
+    id: id(quest.id),
+    playerId: draft ? optionalId(quest.playerId) : id(quest.playerId),
+    name: shortText(draft ? (quest.name ?? "") : quest.name, 60, draft),
+    desc: shortText(draft ? (quest.desc ?? "") : quest.desc, 450, draft),
+    submissionPrompt: shortText(
+      quest.submissionPrompt ?? "",
+      300,
+      draft || !structured,
+    ),
+    completionCriteria: shortText(
+      quest.completionCriteria ?? "",
+      300,
+      draft || !structured,
+    ),
+    sharedGoalId: optionalId(quest.sharedGoalId),
+    plus: integer(draft ? (quest.plus ?? 10) : quest.plus, 0, 999),
+    minus: integer(draft ? (quest.minus ?? 2) : quest.minus, 0, 999),
+  };
+}
+
+function saveQuestDraft(db, account, body) {
   requireAdmin(account);
-  const quest = record(body.quest);
-  const owner = id(quest.playerId);
-  ensureFound(questOwnerExists(db, owner));
+  const draft = questInput(body.quest, true);
+  if (draft.playerId) ensureFound(questOwnerExists(db, draft.playerId));
+  if (db.prepare("SELECT 1 FROM world_quests WHERE id = ?").get(draft.id)) {
+    throw new ApiError(409, "conflict");
+  }
   ensureChanged(
     db
       .prepare(
         `
-    INSERT INTO world_quests (id, player_id, name, description, state, plus, minus)
-    VALUES (?, ?, ?, ?, 'Open', ?, ?) ON CONFLICT(id) DO NOTHING
-  `,
+      INSERT INTO world_quest_drafts (id, admin_id, content, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        content = excluded.content, updated_at = excluded.updated_at
+      WHERE world_quest_drafts.admin_id = excluded.admin_id
+    `,
       )
-      .run(
-        id(quest.id),
-        owner,
-        shortText(quest.name, 60),
-        shortText(quest.desc, 450),
-        integer(quest.plus, 0, 999),
-        integer(quest.minus, 0, 999),
-      ),
+      .run(draft.id, account.id, JSON.stringify(draft), Date.now()),
   );
+}
+
+function deleteQuestDraft(db, account, body) {
+  requireAdmin(account);
+  db.prepare(
+    "DELETE FROM world_quest_drafts WHERE id = ? AND admin_id = ?",
+  ).run(id(body.id), account.id);
+}
+
+function addQuest(db, account, body) {
+  requireAdmin(account);
+  const quest = questInput(body.quest);
+  const fields = {
+    player_id: quest.playerId,
+    name: quest.name,
+    description: quest.desc,
+    submission_prompt: quest.submissionPrompt || null,
+    completion_criteria: quest.completionCriteria || null,
+    shared_goal_id: quest.sharedGoalId,
+    plus: quest.plus,
+    minus: quest.minus,
+    assigned_by: account.id,
+  };
+  const existing = db
+    .prepare("SELECT * FROM world_quests WHERE id = ?")
+    .get(quest.id);
+  if (existing) {
+    if (
+      Object.entries(fields).every(([key, value]) => existing[key] === value)
+    ) {
+      return quest.id;
+    }
+    throw new ApiError(409, "conflict");
+  }
+  const draft = db
+    .prepare("SELECT admin_id FROM world_quest_drafts WHERE id = ?")
+    .get(quest.id);
+  if (draft && draft.admin_id !== account.id)
+    throw new ApiError(409, "conflict");
+  ensureFound(questOwnerExists(db, quest.playerId));
+  if (quest.sharedGoalId) {
+    const profile = db
+      .prepare("SELECT journey FROM world_profiles WHERE account_id = ?")
+      .get(quest.playerId);
+    const goals = JSON.parse(profile?.journey ?? "null")?.goals;
+    if (!goals?.some((goal) => goal.id === quest.sharedGoalId && goal.shared)) {
+      throw new ApiError(409, "conflict");
+    }
+  }
+  db.prepare(
+    `
+    INSERT INTO world_quests (
+      id, player_id, name, description, submission_prompt, completion_criteria,
+      shared_goal_id, plus, minus, assigned_by, state
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Open')
+  `,
+  ).run(quest.id, ...Object.values(fields));
+  if (draft) deleteQuestDraft(db, account, quest);
+  return quest.id;
 }
 
 function submitQuest(db, account, body) {
@@ -530,6 +668,8 @@ const actions = new Map([
   ["journey", saveJourney],
   ["like", toggleVote],
   ["post", addPost],
+  ["saveQuestDraft", saveQuestDraft],
+  ["deleteQuestDraft", deleteQuestDraft],
   ["quest", addQuest],
   ["submit", submitQuest],
   ["review", reviewQuest],

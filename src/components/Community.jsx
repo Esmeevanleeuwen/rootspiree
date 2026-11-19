@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useGame } from "../store.jsx";
 import { newId, points, typeCode } from "../game.js";
 import { houses } from "../content.js";
+import { QuestBrief } from "./QuestBrief.jsx";
 import {
   Avatar,
   Button,
@@ -109,7 +110,12 @@ export function Overview() {
   return (
     <>
       <Heading label={t("Spelleider")} title={t("Speloverzicht")}>
-        <Button icon="plus" onClick={() => setModal({ kind: "addQuest" })}>
+        <Button
+          icon="plus"
+          onClick={() =>
+            navigate("questEditor", { questEditor: { returnPage: "home" } })
+          }
+        >
           {t("Nieuwe opdracht")}
         </Button>
       </Heading>
@@ -154,8 +160,11 @@ export function Overview() {
 }
 export function QuestPage() {
   const { t } = useI18n();
-  const { game, player, gm, setModal } = useGame();
-  const [filter, setFilter] = useState("Alles");
+  const { game, player, gm, navigate, view } = useGame();
+  const [filter, setFilter] = useState(
+    gm && view.questFilter === "Concepten" ? "Concepten" : "Alles",
+  );
+  const showDrafts = gm && filter === "Concepten";
   const items = game.quests.filter(
     (q) =>
       filter === "Alles" ||
@@ -169,7 +178,7 @@ export function QuestPage() {
     <>
       <Heading label={t("Spelwereld")} title={t("Opdrachten")}>
         {gm && (
-          <Button icon="plus" onClick={() => setModal({ kind: "addQuest" })}>
+          <Button icon="plus" onClick={() => navigate("questEditor")}>
             {t("Nieuwe opdracht")}
           </Button>
         )}
@@ -181,15 +190,51 @@ export function QuestPage() {
           "Open",
           "Ingeleverd",
           "Afgerond",
+          ...(gm ? ["Concepten"] : []),
         ]}
         value={filter}
         onChange={setFilter}
       />
       <div className="single">
-        <QuestList items={items} />
+        {showDrafts ? <QuestDraftList /> : <QuestList items={items} />}
       </div>
     </>
   );
+}
+
+function QuestDraftList() {
+  const { t } = useI18n();
+  const { game, navigate } = useGame();
+  const drafts = game.questDrafts || [];
+  if (!drafts.length)
+    return <div className="empty">{t("Je hebt nog geen concepten.")}</div>;
+  return drafts.map((draft) => {
+    const recipient = game.players.find((p) => p.id === draft.playerId);
+    return (
+      <button
+        className="item"
+        key={draft.id}
+        onClick={() =>
+          navigate("questEditor", {
+            questEditor: { draftId: draft.id, returnPage: "quests" },
+          })
+        }
+      >
+        <span className="tile">
+          <Icon name="pen" />
+        </span>
+        <span className="body">
+          <strong>{draft.name || t("Concept zonder titel")}</strong>
+          <span className="meta">
+            {recipient
+              ? exampleText(t, examples.players, recipient, "name")
+              : t("Kies nog een speler")}
+          </span>
+        </span>
+        <span className="badgewrap">{t("Open concept")}</span>
+      </button>
+    );
+  });
 }
 export function Players() {
   const { t } = useI18n();
@@ -311,11 +356,7 @@ function QuestDialog({ quest, close }) {
         <span>{exampleText(t, examples.players, owner, "name")}</span>
         <Status value={quest.state} />
       </div>
-      <p>{questText(t, quest, "desc")}</p>
-      <div className="detailbox">
-        {t("Behaald")} <b>+{quest.plus} pt</b> · {t("Niet behaald")}{" "}
-        <b>−{quest.minus} pt</b>
-      </div>
+      <QuestBrief quest={quest} submissionId="quest-submission-prompt" />
       {own && quest.privateSteps && (
         <>
           <h3>{t("Mijn aanpak")}</h3>
@@ -356,8 +397,19 @@ function QuestDialog({ quest, close }) {
       )}
       {quest.state === "Open" && (own || (gm && owner.npc)) && (
         <form onSubmit={save}>
-          <Field label={t("Wat heb je gedaan?")}>
-            <textarea name="text" required maxLength={500} />
+          <Field
+            label={t(
+              quest.submissionPrompt ? "Jouw inzending" : "Wat heb je gedaan?",
+            )}
+          >
+            <textarea
+              name="text"
+              required
+              maxLength={500}
+              aria-describedby={
+                quest.submissionPrompt ? "quest-submission-prompt" : undefined
+              }
+            />
           </Field>
           <Button type="submit">{t("Inleveren")}</Button>
         </form>
@@ -367,9 +419,14 @@ function QuestDialog({ quest, close }) {
 }
 function PlayerDialog({ target, close }) {
   const { t } = useI18n();
-  const { gm, player, game, navigate, setModal } = useGame();
+  const { gm, player, game, navigate, view } = useGame();
   const own = !gm && player.id === target.id,
     j = target.journey;
+  function createQuest(sharedGoalId) {
+    navigate("questEditor", {
+      questEditor: { playerId: target.id, sharedGoalId, returnPage: view.page },
+    });
+  }
   return (
     <Dialog
       label={t("Spelersprofiel")}
@@ -412,6 +469,20 @@ function PlayerDialog({ target, close }) {
             <b>{g.text}</b>
             <br />
             {g.action}
+            {gm && (
+              <div>
+                <Button
+                  icon="plus"
+                  kind="textbtn"
+                  onClick={() => createQuest(g.id)}
+                  aria-label={t("Maak opdracht voor dit doel: {goal}", {
+                    goal: g.text,
+                  })}
+                >
+                  {t("Maak opdracht voor dit doel")}
+                </Button>
+              </div>
+            )}
           </div>
         ))}
       <div className="foot">
@@ -422,10 +493,7 @@ function PlayerDialog({ target, close }) {
           />
         </div>
         {gm && (
-          <Button
-            icon="plus"
-            onClick={() => setModal({ kind: "addQuest", id: target.id })}
-          >
+          <Button icon="plus" onClick={() => createQuest()}>
             {t("Opdracht toewijzen")}
           </Button>
         )}
@@ -433,13 +501,12 @@ function PlayerDialog({ target, close }) {
     </Dialog>
   );
 }
-function AddDialog({ kind, id, close }) {
+function AddDialog({ kind, close }) {
   const { t } = useI18n();
   const { game, gm, player, mutate, setModal, navigate } = useGame();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const post = kind === "post",
-    quest = kind === "addQuest";
+  const post = kind === "post";
   if (!gm && !post) return null;
   async function submit(e) {
     e.preventDefault();
@@ -455,21 +522,6 @@ function AddDialog({ kind, id, close }) {
     const key = newId();
     if (post) {
       if (await mutate("post", { id: key, text: f.msg })) navigate("feed");
-    } else if (quest) {
-      const result = await mutate("quest", {
-        quest: {
-          id: key,
-          playerId: f.person,
-          name: f.title,
-          desc: f.desc,
-          plus: Number(f.plus),
-          minus: Number(f.minus),
-        },
-      });
-      if (result) {
-        navigate("quests");
-        setModal({ kind: "quest", id: key });
-      }
     } else {
       const result = await mutate("npc", {
         player: {
@@ -491,13 +543,7 @@ function AddDialog({ kind, id, close }) {
   return (
     <Dialog
       label={post ? t("Kampvuur") : t("Spelleider")}
-      title={
-        post
-          ? t("Schrijf iets")
-          : quest
-            ? t("Nieuwe opdracht")
-            : t("Personage toevoegen")
-      }
+      title={post ? t("Schrijf iets") : t("Personage toevoegen")}
       close={close}
     >
       <form onSubmit={submit}>
@@ -509,49 +555,6 @@ function AddDialog({ kind, id, close }) {
           >
             <textarea required name="msg" maxLength={600} />
           </Field>
-        ) : quest ? (
-          <>
-            <Field label={t("Voor wie?")}>
-              <select
-                name="person"
-                required
-                defaultValue={
-                  id ||
-                  game.players.find((p) => !p.npc)?.id ||
-                  game.players[0]?.id
-                }
-              >
-                {game.players.map((p) => (
-                  <option value={p.id} key={p.id}>
-                    {exampleText(t, examples.players, p, "name")}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label={t("Titel")}>
-              <input name="title" maxLength={60} required />
-            </Field>
-            <Field label={t("Wat gaat de speler doen?")}>
-              <textarea name="desc" maxLength={450} required />
-            </Field>
-            <div className="pair">
-              {[
-                ["plus", "Pluspunten", 10],
-                ["minus", "Minpunten", 2],
-              ].map(([name, label, value]) => (
-                <Field key={name} label={t(label)}>
-                  <input
-                    name={name}
-                    type="number"
-                    min="0"
-                    max="999"
-                    defaultValue={value}
-                    required
-                  />
-                </Field>
-              ))}
-            </div>
-          </>
         ) : (
           <>
             <Field label={t("Naam")}>
@@ -589,11 +592,7 @@ function AddDialog({ kind, id, close }) {
         )}
         {error && <p role="alert">{t(error)}</p>}
         <Button type="submit" disabled={busy}>
-          {post
-            ? t("Plaatsen")
-            : quest
-              ? t("Opdracht toewijzen")
-              : t("Personage toevoegen")}
+          {post ? t("Plaatsen") : t("Personage toevoegen")}
         </Button>
       </form>
     </Dialog>

@@ -1753,3 +1753,22 @@ textarea {
     font-size: 0.85rem;
   }
 }
+
+.quest-brief {
+  display: grid;
+  gap: 16px;
+  margin-block: 16px;
+  min-width: 0;
+}
+.quest-brief h3 {
+  margin: 0 0 3px;
+  font-size: 0.95rem;
+}
+.quest-brief p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.quest-brief .detailbox {
+  margin: 0;
+}

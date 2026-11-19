@@ -7,6 +7,7 @@ import { Button, Heading, Icon } from "./components/ui.jsx";
 import { Entry, LanguageSelector, QuizForm } from "./components/Entry.jsx";
 import { BioDialog, Profile } from "./components/Profile.jsx";
 import { Journey, JourneyDialog } from "./components/Journey.jsx";
+import { QuestEditor } from "./components/QuestEditor.jsx";
 import {
   CommunityDialog,
   Feed,
@@ -252,6 +253,7 @@ function Game({ language, setLanguage, onLogout, authError }) {
   const words = chrome[language];
   const content = useRef(null);
   const { page } = view;
+  const activePage = page === "questEditor" ? "quests" : page;
   const j = player?.journey;
   const step =
     page === "home" && !gm && j
@@ -282,6 +284,7 @@ function Game({ language, setLanguage, onLogout, authError }) {
   const screens = {
     home: gm ? <Overview /> : <Journey />,
     quests: <QuestPage />,
+    questEditor: gm ? <QuestEditor {...view.questEditor} /> : null,
     players: <Players />,
     feed: <Feed />,
     accounts: gm ? <AdminAccounts words={words} /> : null,
@@ -313,8 +316,8 @@ function Game({ language, setLanguage, onLogout, authError }) {
           {links.map(([id, icon]) => (
             <button
               key={id}
-              className={"navbtn " + (page === id ? "on" : "")}
-              aria-current={page === id ? "page" : undefined}
+              className={"navbtn " + (activePage === id ? "on" : "")}
+              aria-current={activePage === id ? "page" : undefined}
               onClick={() => navigate(id)}
             >
               <Icon name={icon === "list" ? "people" : icon} />
