@@ -1,0 +1,367 @@
+.aether-world {
+  --aether-map-track: #ffecbf;
+  --aether-map-overlay: rgb(11 31 32 / 19%);
+  --aether-map-pin: #f6f4ec;
+  --aether-map-pin-active: #fff8e7;
+  --aether-map-pin-border: #bf9551;
+  --aether-map-pin-text: #26372f;
+  --aether-map-pin-muted: #4d665b;
+}
+
+.aether-world-page-head,
+.aether-map-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.aether-world-page-head {
+  margin-block-end: var(--space-7);
+}
+
+.aether-world-page-head h1 {
+  margin-block-start: var(--space-2);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.aether-world-chapter {
+  flex: none;
+}
+
+.aether-map-layout {
+  display: grid;
+  grid-template-columns: minmax(9rem, 11.5rem) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.aether-map-nav {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.aether-map-nav p {
+  padding: var(--space-3) var(--space-2) var(--space-4);
+  color: var(--color-text);
+  font: 500 1.2rem / 1.2 var(--font-display);
+}
+
+.aether-map-nav button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  text-align: start;
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+}
+
+.aether-map-nav button:hover,
+.aether-map-nav button[aria-current] {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.aether-map-nav .ico {
+  width: 0.94rem;
+  height: 0.94rem;
+}
+
+.aether-map-heading {
+  margin-block: var(--space-1) var(--space-4);
+}
+
+.aether-map-heading h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.aether-map-heading p {
+  margin-block-start: var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.55;
+}
+
+.aether-map-chapter,
+.aether-region-skill,
+.aether-region-membership {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.aether-map-chapter {
+  border-color: color-mix(
+    in srgb,
+    var(--aether-map-pin-border) 28%,
+    var(--color-border)
+  );
+  background: var(--aether-map-pin-active);
+  color: var(--color-warning);
+}
+
+.aether-map-frame {
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.aether-map-pins {
+  position: relative;
+  min-height: clamp(23rem, 34vw, 30rem);
+  overflow: clip;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(var(--aether-map-overlay), var(--aether-map-overlay)),
+    var(--art-aether) center 49% / cover no-repeat,
+    #29424a;
+}
+
+.aether-map-path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.aether-map-path path {
+  fill: none;
+  stroke: var(--aether-map-track);
+  stroke-dasharray: 10 15;
+  stroke-width: 2.5;
+  opacity: 0.86;
+  vector-effect: non-scaling-stroke;
+}
+
+.aether-map-pin {
+  --pin-width: 11rem;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: var(--pin-width);
+  min-height: 4.2rem;
+  padding: var(--space-3);
+  border: 2px solid color-mix(in srgb, white 87%, var(--aether-map-pin-border));
+  border-radius: var(--radius-md);
+  background: var(--aether-map-pin);
+  box-shadow: 0 6px 18px rgb(10 25 26 / 18%);
+  color: var(--aether-map-pin-text);
+  text-align: start;
+  transition:
+    background var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+
+.aether-map-pin:hover,
+.aether-map-pin[aria-pressed="true"] {
+  border-color: var(--aether-map-pin-border);
+  background: var(--aether-map-pin-active);
+}
+
+.aether-map-pin[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px rgb(39 29 13 / 28%),
+    0 6px 18px rgb(10 25 26 / 18%);
+}
+
+.aether-map-pin:focus-visible {
+  outline: 2px solid var(--aether-map-pin-active);
+  outline-offset: 4px;
+}
+
+.aether-map-pin-icon,
+.aether-region-panel h3 > span {
+  font-family: var(--font-emoji);
+}
+
+.aether-map-pin-icon {
+  flex: none;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.aether-map-pin-label {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.aether-map-pin strong {
+  font-size: var(--font-size-sm);
+}
+
+.aether-map-pin small {
+  color: var(--aether-map-pin-muted);
+  font-size: var(--font-size-xs);
+}
+
+.aether-map-pin-awakening {
+  inset-block-start: 8%;
+  inset-inline-start: 10%;
+}
+
+.aether-map-pin-connected-isles {
+  inset-block-start: 12%;
+  inset-inline-end: 8%;
+}
+
+.aether-map-pin-shadowwood {
+  inset-block-end: 11%;
+  inset-inline-start: 14%;
+}
+
+.aether-map-pin-star-tower {
+  inset-block-end: 11%;
+  inset-inline-end: 7%;
+}
+
+.aether-region-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-block-start: var(--space-4);
+}
+
+.aether-region-panel {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.aether-region-panel h3 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-block: var(--space-2);
+  font: 500 var(--font-size-section) / 1.2 var(--font-display);
+}
+
+.aether-region-panel > p:not(.eyebrow) {
+  margin-block: var(--space-3) var(--space-4);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
+.aether-region-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+.aether-region-membership {
+  border-color: var(--color-positive-muted);
+  background: var(--color-positive-muted);
+  color: var(--color-positive);
+}
+
+@media (max-width: 960px) {
+  .aether-map-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .aether-map-nav {
+    display: flex;
+    flex-wrap: wrap;
+    padding: var(--space-2);
+  }
+
+  .aether-map-nav p {
+    display: none;
+  }
+
+  .aether-map-nav button {
+    padding-inline: var(--space-3);
+  }
+}
+
+@media (max-width: 620px) {
+  .aether-world-page-head {
+    margin-block-end: var(--space-4);
+  }
+
+  .aether-world-page-head .aether-world-chapter {
+    display: none;
+  }
+
+  .aether-map-nav button {
+    padding-inline: var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+
+  .aether-map-pins {
+    min-height: 26rem;
+    background-position:
+      center,
+      47% center;
+  }
+
+  .aether-map-pin {
+    --pin-width: min(44%, 10rem);
+    padding: var(--space-2);
+  }
+
+  .aether-map-pin-icon {
+    font-size: 1.1rem;
+  }
+
+  .aether-map-pin strong {
+    font-size: var(--font-size-xs);
+  }
+
+  .aether-map-pin small {
+    display: none;
+  }
+
+  .aether-map-pin-awakening {
+    inset-block-start: 9%;
+    inset-inline-start: 5%;
+  }
+
+  .aether-map-pin-connected-isles {
+    inset-block-start: 26%;
+    inset-inline-end: 5%;
+  }
+
+  .aether-map-pin-shadowwood {
+    inset-block-end: 24%;
+    inset-inline-start: 5%;
+  }
+
+  .aether-map-pin-star-tower {
+    inset-block-end: 8%;
+    inset-inline-end: 5%;
+  }
+
+  .aether-region-details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

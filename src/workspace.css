@@ -1,15 +1,7 @@
 .app-shell {
-  min-height: calc(100dvh - var(--space-6));
-  margin: var(--space-3);
-  display: grid;
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-  background: var(--gradient-page);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-html:has(.app-shell) {
-  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
 }
 
 html:has(.workspace-dialog[open]) {
@@ -20,156 +12,70 @@ html:has(.workspace-dialog[open]) {
   overscroll-behavior: contain;
 }
 
-.app-sidebar {
+.app-masthead {
   position: sticky;
-  top: var(--space-3);
-  min-height: min(44rem, calc(100dvh - var(--space-6)));
-  max-height: calc(100dvh - var(--space-6));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  align-self: start;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  padding: var(--space-5) var(--space-3);
+  inset-block-start: 0;
+  z-index: 5;
+  border-bottom: 1px solid var(--color-border);
   background: var(--color-sidebar);
-  border-right: 1px solid var(--color-border);
-  border-radius: var(--radius-md) 0 0 0;
-}
-
-.app-wordmark {
-  width: fit-content;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text);
-  font: 740 1.12rem/1.05 var(--font-display);
-  letter-spacing: -0.03em;
-  white-space: nowrap;
-}
-
-.app-wordmark svg {
-  width: var(--space-7);
-  height: var(--space-7);
-}
-
-.app-wordmark small {
-  display: block;
-  margin-block-start: var(--space-1);
-  color: var(--color-accent);
-  font: 730 var(--font-size-xs)/1 var(--font-sans);
-  font-size: 0.61rem;
-  letter-spacing: 0.18em;
-}
-
-.app-sidebar > .app-wordmark {
-  padding-inline: var(--space-2);
-}
-.app-navigation {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.app-nav-link {
-  width: 100%;
-  min-width: 0;
-  min-height: var(--control-height);
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  border: 1px solid transparent;
-  border-inline-start: 2px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: var(--space-2) var(--space-3);
-  color: var(--color-muted);
-  text-align: left;
-  font-size: var(--font-size-sm);
-  font-weight: 640;
-}
-
-.app-nav-link .ico {
-  width: calc(var(--size-icon) * 0.9);
-  height: calc(var(--size-icon) * 0.9);
-  color: var(--color-info);
-}
-.app-nav-link .ico-illustrated,
-.app-initial .ico-illustrated {
-  --icon-glyph-size: 0.94rem;
-}
-
-.app-nav-link:hover {
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-.app-nav-link[aria-current="page"] {
-  border-inline-start-color: var(--color-positive);
-  background: var(--color-surface-hover);
-  color: var(--color-text);
-}
-
-.app-nav-compact {
-  display: none;
-}
-
-.app-admin-card {
-  margin-block-start: auto;
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--gradient-card);
-}
-
-.app-admin-card h2 {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font: 700 var(--font-size-sm)/1.3 var(--font-sans);
-}
-
-.app-admin-card h2 .ico {
-  color: var(--color-accent);
-}
-.app-admin-card p {
-  margin-block-start: var(--space-2);
-  color: var(--color-muted);
-  font-size: var(--font-size-xs);
-  line-height: 1.5;
-}
-
-.app-admin-card button {
-  width: 100%;
-  min-height: calc(var(--control-height) * 0.85);
-  margin-block-start: var(--space-3);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: 750;
-}
-
-.app-admin-card button:hover {
-  background: var(--color-accent-hover);
-}
-
-.app-main {
-  min-width: 0;
-  position: relative;
+  box-shadow: 0 1px 6px rgb(25 45 36 / 4%);
 }
 
 .app-top {
-  position: absolute;
-  z-index: 5;
-  inset: var(--space-5) var(--content-gutter) auto auto;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+  grid-template-areas: "brand navigation account";
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
+  gap: var(--space-4);
+  max-width: var(--content-max);
+  min-height: var(--nav-height);
+  margin-inline: auto;
+  padding: var(--space-2) var(--content-gutter);
 }
 
-.app-mobile-brand {
-  display: none;
+.app-top .app-wordmark {
+  justify-self: start;
+  grid-area: brand;
+  display: flex;
+  align-items: center;
+  padding: 0;
 }
+
+.app-navigation {
+  grid-area: navigation;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.app-nav-link {
+  flex: none;
+  min-height: calc(var(--control-height) - var(--space-1));
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 630;
+  white-space: nowrap;
+}
+
+.app-nav-link:hover,
+.app-nav-link[aria-current="page"] {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.app-top .app-account {
+  grid-area: account;
+  justify-self: end;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .app-account {
   position: relative;
   min-width: 0;
@@ -184,7 +90,7 @@ html:has(.workspace-dialog[open]) {
   padding: var(--space-1) var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: var(--color-sidebar);
+  background: var(--color-surface-raised);
   color: var(--color-text);
   list-style: none;
   cursor: pointer;
@@ -207,8 +113,8 @@ html:has(.workspace-dialog[open]) {
 }
 
 .app-initial {
-  width: var(--space-6);
-  height: var(--space-6);
+  width: var(--space-5);
+  height: var(--space-5);
   display: grid;
   place-items: center;
   flex: none;
@@ -218,11 +124,16 @@ html:has(.workspace-dialog[open]) {
   font-weight: 750;
 }
 
+.app-initial .ico {
+  width: var(--space-3);
+  height: var(--space-3);
+}
+
 .app-account-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 660;
+  font-weight: 530;
 }
 
 .app-account-chevron {
@@ -299,17 +210,7 @@ html:has(.workspace-dialog[open]) {
   max-width: var(--content-max);
   min-width: 0;
   margin-inline: auto;
-  padding: calc(var(--control-height) + var(--space-7)) var(--content-gutter)
-    var(--space-8);
-}
-
-.app-content-dashboard.wrap {
-  padding-block-start: var(--space-5);
-}
-
-.app-content-dashboard .heading:first-child {
-  padding-inline-end: min(16rem, 28%);
-  min-height: var(--control-height);
+  padding: var(--space-7) var(--content-gutter) 0;
 }
 
 .app-content .heading {
@@ -320,20 +221,38 @@ html:has(.workspace-dialog[open]) {
 
 .app-content .heading h1 {
   color: var(--color-text);
-  font: 760 var(--font-size-title)/1.08 var(--font-display);
-  letter-spacing: -0.048em;
+  font: 400 var(--font-size-title)/1.08 var(--font-display);
+  letter-spacing: -0.036em;
 }
 
 .app-content .heading .eyebrow {
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
 }
+
+.app-chapter {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 670;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .app-content .sectionhead h2 {
   color: var(--color-text);
-  font: 710 var(--font-size-section)/1.2 var(--font-sans);
+  font: 400 var(--font-size-section)/1.2 var(--font-display);
   letter-spacing: -0.025em;
 }
+
 .app-content .detailbox[role="alert"] {
   margin-top: 0;
+}
+
+.app-footer {
+  margin-block: var(--space-7) var(--space-8);
+  padding-inline: var(--content-gutter);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  text-align: center;
 }
 
 .app-people-switch {
@@ -392,23 +311,29 @@ html:has(.workspace-dialog[open]) {
   display: none;
 }
 
-.app-guide,
-.app-settings {
+.app-guide {
   max-width: 44rem;
 }
 .app-guide button {
   margin-top: var(--space-3);
 }
 
+.app-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: var(--space-4);
+  max-width: 44rem;
+  margin-bottom: var(--space-3);
+}
+
 .app-settings .app-setting {
-  padding: var(--space-4);
-  margin-block: var(--space-3);
-  background: var(--gradient-card);
+  padding: var(--space-5);
+  background: var(--color-surface);
 }
 
 .app-setting h2 {
-  margin-block-end: var(--space-2);
-  font-size: var(--font-size-base);
+  margin-block-end: var(--space-3);
+  font-size: var(--font-size-section);
 }
 
 .app-setting p {
@@ -419,129 +344,43 @@ html:has(.workspace-dialog[open]) {
   width: fit-content;
 }
 
-.world-intro {
-  margin-block-end: var(--space-6);
-  color: var(--color-muted);
-}
-.world-houses .world-house {
-  background: var(--gradient-card);
-}
-.world-houses .houseArt {
-  height: clamp(7rem, 12vw, 13rem);
-}
-.world-houses .houseText {
-  align-items: center;
-}
-.world-houses .houseText > span:last-child {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.world-house-description {
-  display: block;
-  margin: 0 var(--space-3) var(--space-3);
-  color: var(--color-muted);
-  font-size: var(--font-size-sm);
-  line-height: 1.55;
-}
-.world-membership {
-  display: block;
-  width: fit-content;
-  margin: 0 var(--space-3) var(--space-3);
-  padding: var(--space-1) var(--space-2);
-  background: var(--color-accent-muted);
-  color: var(--color-accent);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-}
-
-@media (max-width: 1050px) and (min-width: 771px) {
-  .app-shell {
-    grid-template-columns: calc(var(--sidebar-width) * 0.88) minmax(0, 1fr);
-  }
-  .world-houses {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 770px) {
-  .app-shell {
-    display: block;
-    min-height: 100dvh;
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-  }
-
-  .app-sidebar {
-    position: fixed;
-    inset: auto 0 0;
-    z-index: 4;
-    display: block;
-    min-height: auto;
-    max-height: none;
-    overflow: visible;
-    padding: var(--space-1) var(--space-2)
-      max(env(safe-area-inset-bottom), var(--space-1));
-    border: 0;
-    border-top: 1px solid var(--color-border);
-    border-radius: 0;
-  }
-
-  .app-sidebar > .app-wordmark,
-  .app-admin-card,
-  .app-nav-settings,
-  .app-nav-full {
-    display: none;
-  }
-  .app-nav-compact {
-    display: block;
+@media (max-width: 980px) {
+  .app-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    grid-template-areas:
+      "brand account"
+      "navigation navigation";
+    gap: var(--space-2);
+    padding-block: var(--space-3) var(--space-1);
   }
 
   .app-navigation {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: var(--space-1);
+    min-width: 0;
+    margin-inline: -3px;
+    padding: 3px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
   }
 
   .app-nav-link {
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--space-1);
-    min-height: max(44px, calc(var(--nav-height) - var(--space-2)));
-    padding: var(--space-1);
-    border-inline-start-width: 1px;
-    border-bottom-width: 2px;
-    font-size: var(--font-size-xs);
-    text-align: center;
-    line-height: 1.12;
+    min-height: 44px;
   }
 
-  .app-nav-link span {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-  }
-
-  .app-nav-link[aria-current="page"] {
-    border-inline-start-color: transparent;
-    border-bottom-color: var(--color-positive);
-  }
-
-  .app-top {
-    position: sticky;
-    inset: 0 0 auto;
-    min-height: var(--nav-height);
-    justify-content: space-between;
-    padding: var(--space-2) var(--content-gutter);
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-sidebar);
-  }
-
-  .app-mobile-brand {
-    display: block;
-  }
   .app-account-trigger {
-    min-height: max(44px, var(--control-height));
-    max-width: min(12rem, 49vw);
+    min-height: 44px;
+    max-width: min(12rem, 44vw);
+  }
+
+  .app-content.wrap {
+    padding-block-start: var(--space-5);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-nav-link {
+    padding-inline: var(--space-2);
+    font-size: var(--font-size-xs);
   }
 
   .app-account-panel > button,
@@ -551,18 +390,6 @@ html:has(.workspace-dialog[open]) {
 
   .workspace-dialog .x {
     min-width: 44px;
-  }
-
-  .app-content.wrap {
-    padding: var(--space-5) var(--content-gutter)
-      calc(var(--nav-height) + var(--space-7));
-  }
-
-  .app-content-dashboard .heading:first-child {
-    padding-inline-end: 0;
-  }
-  .app-content .heading {
-    margin-bottom: var(--space-4);
   }
 }
 
@@ -594,20 +421,5 @@ html:has(.workspace-dialog[open]) {
     display: block;
     color: var(--color-muted);
     font-size: var(--font-size-xs);
-  }
-}
-
-@media (max-width: 360px) {
-  .app-sidebar {
-    padding-inline: var(--space-1);
-  }
-
-  .app-navigation {
-    gap: calc(var(--space-1) / 2);
-  }
-
-  .app-nav-link {
-    padding-inline: 0;
-    font-size: min(var(--font-size-xs), 0.6875rem);
   }
 }

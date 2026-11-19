@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { getAetherRegion } from "../aether-regions.js";
 import { examples } from "../examples.js";
 import { newId } from "../game.js";
 import { exampleText, questText, useI18n } from "../i18n.jsx";
@@ -198,6 +199,7 @@ export function QuestEditor(props) {
   const context = props.draftId
     ? ["draft", props.draftId]
     : ["new", props.playerId ?? "", props.sharedGoalId ?? ""];
+  if (!props.draftId && props.template) context.push(props.template);
   const recoveryKey =
     "rootspiree.quest-edits.v1:" + JSON.stringify([account.id, ...context]);
   return (
@@ -210,6 +212,7 @@ function QuestEditorForm({
   playerId,
   sharedGoalId,
   draftId,
+  template,
   returnPage = "quests",
 }) {
   const { language, t } = useI18n();
@@ -222,9 +225,10 @@ function QuestEditorForm({
       ? recovered
       : null;
   });
-  const [newForm] = useState(() =>
-    initialForm(null, playerId, sharedGoalId, edits?.form.id),
-  );
+  const [newForm] = useState(() => ({
+    ...initialForm(null, playerId, sharedGoalId, edits?.form.id),
+    ...getAetherRegion(template)?.[language]?.quest,
+  }));
   const draft = game.questDrafts?.find(
     (item) => item.id === (draftId ?? edits?.form.id),
   );
@@ -303,6 +307,8 @@ function QuestEditorForm({
     if (dirty && !retained && !discard()) return;
     if (hasDraft && returnPage === "quests") {
       navigate("quests", { questFilter: "Concepten" });
+    } else if (returnPage === "world") {
+      navigate("world", { region: template });
     } else {
       navigate(returnPage);
     }
@@ -400,7 +406,7 @@ function QuestEditorForm({
       } else if (!draftId) {
         navigate(
           "questEditor",
-          { questEditor: { draftId: quest.id, returnPage } },
+          { questEditor: { draftId: quest.id, returnPage, template } },
           { replace: true },
         );
       }

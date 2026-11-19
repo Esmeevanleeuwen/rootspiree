@@ -1,4 +1,5 @@
 import { examples } from "../examples.js";
+import { experience } from "../experience.js";
 import { exampleText, exerciseStepText, questText, useI18n } from "../i18n.jsx";
 import { useState } from "react";
 import { useGame } from "../store.jsx";
@@ -8,6 +9,7 @@ import { QuestBrief } from "./QuestBrief.jsx";
 import { QuestList, Status } from "./QuestList.jsx";
 import { Avatar, Button, Dialog, Field, Heading, Icon } from "./ui.jsx";
 import "../community-ui.css";
+import "../aether-people.css";
 
 export { GameMasterDashboard as Overview } from "./GameMasterDashboard.jsx";
 export { QuestList } from "./QuestList.jsx";
@@ -23,10 +25,46 @@ const copy = {
     questScope: "Quest scope",
     filterByStatus: "Filter by status",
     directoryFilter: "Filter people",
-    allPeople: "Everyone",
-    players: "Players",
-    characters: "Characters",
+    allPeople: "All characters",
+    players: "Real players",
+    characters: "Fictional NPCs",
     noPeople: "No one in this list yet.",
+    noMatches: "No characters match your search.",
+    peopleTitle: "Heroes & NPCs",
+    peopleIntro:
+      "Meet the players and fictional characters of LevelUp World. Select a profile to see their quests.",
+    search: "Search characters",
+    searchPlaceholder: "Search by name or role…",
+    realPlayer: "Real player · Light",
+    fictionalNpc: "Fictional NPC · Shadow",
+    npcLevel: "Story character",
+    npcInfo: "No player account",
+    level: "Level",
+    progress: "Next level",
+    score: "Score",
+    emptyBio: "No description yet.",
+    profile: "View profile",
+    quest: "Quest",
+    questIntro:
+      "Each quest is a real-life exercise. Open an assignment to see what to try and how it will be reviewed.",
+    questGuide: "How quests work",
+    questSteps: [
+      ["Get a quest", "The Game Master assigns an exercise with a clear goal."],
+      [
+        "Try it and reflect",
+        "Complete the exercise and send in a short reflection.",
+      ],
+      [
+        "Get feedback",
+        "The Game Master reviews your work and adjusts your score.",
+      ],
+    ],
+    questPrivacy: "Only you and the Game Master can see your reflection.",
+    campfireIntro:
+      "Share what you’re learning, celebrate a small win, or support another player.",
+    share: "Share with the group",
+    leaderboard: "Leaderboard",
+    noRankedPlayers: "Players appear here after completing setup.",
     noPosts: "No posts yet. Start the conversation.",
     adminFilters: {
       Alles: "All quests",
@@ -48,10 +86,49 @@ const copy = {
     questScope: "Opdrachten weergeven",
     filterByStatus: "Filter op status",
     directoryFilter: "Filter personen",
-    allPeople: "Iedereen",
-    players: "Spelers",
-    characters: "Personages",
+    allPeople: "Alle personages",
+    players: "Echte spelers",
+    characters: "Fictieve NPC’s",
     noPeople: "Er staat nog niemand in deze lijst.",
+    noMatches: "Geen personages gevonden.",
+    peopleTitle: "Helden & NPC’s",
+    peopleIntro:
+      "Leer de spelers en fictieve personages van LevelUp World kennen. Open een profiel om de opdrachten te bekijken.",
+    search: "Zoek personages",
+    searchPlaceholder: "Zoek op naam of rol…",
+    realPlayer: "Echte speler · Licht",
+    fictionalNpc: "Fictieve NPC · Schaduw",
+    npcLevel: "Verhaalpersonage",
+    npcInfo: "Geen spelersaccount",
+    level: "Level",
+    progress: "Volgend level",
+    score: "Score",
+    emptyBio: "Nog geen beschrijving.",
+    profile: "Bekijk profiel",
+    quest: "Opdracht",
+    questIntro:
+      "Elke opdracht is een oefening in het echte leven. Open een opdracht om te zien wat je kunt proberen en hoe die wordt beoordeeld.",
+    questGuide: "Zo werken opdrachten",
+    questSteps: [
+      [
+        "Krijg een opdracht",
+        "De spelleider wijst een oefening met een duidelijk doel toe.",
+      ],
+      [
+        "Probeer en reflecteer",
+        "Voer de oefening uit en stuur een korte reflectie in.",
+      ],
+      [
+        "Krijg feedback",
+        "De spelleider beoordeelt je werk en past je score aan.",
+      ],
+    ],
+    questPrivacy: "Alleen jij en de spelleider kunnen je reflectie zien.",
+    campfireIntro:
+      "Deel wat je leert, vier een kleine overwinning of moedig een andere speler aan.",
+    share: "Deel iets met de groep",
+    leaderboard: "Ranglijst",
+    noRankedPlayers: "Spelers verschijnen hier zodra hun account klaar is.",
     noPosts: "Nog geen berichten. Begin het gesprek.",
     adminFilters: {
       Alles: "Alle opdrachten",
@@ -78,37 +155,81 @@ function belongsToFilter(quest, filter) {
   );
 }
 
-function Roster({ items }) {
-  const { language, t } = useI18n();
-  const { game, setModal } = useGame();
-  if (!items.length)
-    return <div className="work-list empty">{copy[language].noPeople}</div>;
+function CharacterCard({ person, name, role, words }) {
+  const { t } = useI18n();
+  const { game, gm, navigate, setModal } = useGame();
+  const { xp, level, progress, goal } = experience(game, person);
+  const score = points(game, person);
+  const headingId = "character-" + person.id;
+
   return (
-    <div className="work-list roster-list">
-      {items.map((p) => (
-        <button
-          className="person"
-          key={p.id}
-          onClick={() => setModal({ kind: "player", id: p.id })}
-        >
-          <Avatar player={p} />
-          <span className="identity">
-            <span>
-              <b>{exampleText(t, examples.players, p, "name")}</b>
-              {p.npc && (
-                <span className="small">
-                  {exampleText(t, examples.players, p, "role")}
-                </span>
-              )}
-            </span>
+    <article
+      className="character-card"
+      data-npc={person.npc || undefined}
+      aria-labelledby={headingId}
+    >
+      <div className="character-card-identity">
+        <Avatar player={person} large />
+        <div>
+          <h2 id={headingId}>{name}</h2>
+          <span className="character-badge">
+            <span aria-hidden="true">{person.npc ? "☾" : "✦"}</span>
+            {person.npc ? words.fictionalNpc : words.realPlayer}
           </span>
-          <span className="score">
-            {points(game, p)} <small>pt</small>
-          </span>
-          <Icon name="chev" />
-        </button>
-      ))}
-    </div>
+        </div>
+      </div>
+      <p className="character-level">
+        {person.npc ? words.npcLevel : `${words.level} ${level} · ${xp} XP`}
+      </p>
+      <p className="character-role">{role}</p>
+      <p className="character-bio">
+        {exampleText(t, examples.players, person, "desc") || words.emptyBio}
+      </p>
+      <div className="character-growth">
+        {person.npc ? (
+          <span className="character-badge">{words.npcInfo}</span>
+        ) : (
+          <>
+            <div className="character-growth-label">
+              <span>{words.progress}</span>
+              <span>
+                {progress}/{goal} XP
+              </span>
+            </div>
+            <progress max={goal} value={progress} aria-label={words.progress} />
+          </>
+        )}
+      </div>
+      <footer className="character-card-footer">
+        <div className="character-score">
+          <span>{words.score}</span>
+          <strong data-negative={score < 0 || undefined}>{score} pt</strong>
+        </div>
+        <div className="character-card-actions">
+          <Button
+            kind="secondary"
+            aria-label={`${words.profile}: ${name}`}
+            onClick={() => setModal({ kind: "player", id: person.id })}
+          >
+            {words.profile}
+          </Button>
+          {gm && (
+            <Button
+              kind="secondary"
+              icon="plus"
+              aria-label={t("Opdracht toewijzen")}
+              onClick={() =>
+                navigate("questEditor", {
+                  questEditor: { playerId: person.id, returnPage: "players" },
+                })
+              }
+            >
+              {words.quest}
+            </Button>
+          )}
+        </div>
+      </footer>
+    </article>
   );
 }
 
@@ -157,6 +278,7 @@ export function QuestPage() {
           </Button>
         )}
       </Heading>
+      <p className="work-page-intro">{words.questIntro}</p>
       <div className="work-quest-toolbar">
         {gm ? (
           <FilterBar
@@ -193,32 +315,46 @@ export function QuestPage() {
           </>
         )}
       </div>
-      {gm && filter === "Alles" && items.length ? (
-        <div className="work-quest-groups">
-          {questGroups.map((status) => {
-            const quests = byStatus(status);
-            if (!quests.length) return null;
-            return (
-              <section key={status}>
-                <div className="work-section-heading">
-                  <h2>{words.adminFilters[status]}</h2>
-                </div>
-                <div className="work-list">
-                  <QuestList items={quests} />
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="work-list">
-          {filter === "Concepten" ? (
-            <QuestDraftList />
-          ) : (
-            <QuestList items={items} />
-          )}
-        </div>
-      )}
+      <div className="work-columns">
+        {gm && filter === "Alles" && items.length ? (
+          <div className="work-quest-groups">
+            {questGroups.map((status) => {
+              const quests = byStatus(status);
+              if (!quests.length) return null;
+              return (
+                <section key={status}>
+                  <div className="work-section-heading">
+                    <h2>{words.adminFilters[status]}</h2>
+                  </div>
+                  <div className="work-list">
+                    <QuestList items={quests} />
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="work-list">
+            {filter === "Concepten" ? (
+              <QuestDraftList />
+            ) : (
+              <QuestList items={items} />
+            )}
+          </div>
+        )}
+        <aside className="work-card" aria-labelledby="quest-guide-title">
+          <h2 id="quest-guide-title">{words.questGuide}</h2>
+          <ol className="work-steps">
+            {words.questSteps.map(([title, description]) => (
+              <li key={title}>
+                <strong>{title}</strong>
+                <p>{description}</p>
+              </li>
+            ))}
+          </ol>
+          <p className="work-callout">{words.questPrivacy}</p>
+        </aside>
+      </div>
     </div>
   );
 }
@@ -264,97 +400,165 @@ export function Players({ embedded = false }) {
   const { language, t } = useI18n();
   const words = copy[language];
   const { game, gm, setModal, view, navigate } = useGame();
-  const filter = view.peopleFilter || "players";
+  const [search, setSearch] = useState("");
+  const filter = view.peopleFilter ?? "all";
+  const query = search.trim().toLocaleLowerCase(language);
+  const characters = ranked(game)
+    .filter(
+      (person) =>
+        filter === "all" || Boolean(person.npc) === (filter === "characters"),
+    )
+    .map((person) => ({
+      person,
+      name: exampleText(t, examples.players, person, "name"),
+      role: person.registered
+        ? t("Speler")
+        : exampleText(t, examples.players, person, "role"),
+    }))
+    .filter(({ name, role }) =>
+      `${name} ${role}`.toLocaleLowerCase(language).includes(query),
+    );
+
   return (
-    <div className="quest-workspace">
-      {!embedded && <Heading title={t("Spelers")} />}
-      <div className="work-quest-toolbar">
-        <FilterBar
-          label={words.directoryFilter}
-          choices={{
-            players: words.players,
-            characters: words.characters,
-            all: words.allPeople,
-          }}
-          selected={filter}
-          onChange={(peopleFilter) => navigate("players", { peopleFilter })}
+    <div className="character-directory">
+      {!embedded && <Heading title={words.peopleTitle} />}
+      <p className="character-directory-intro">{words.peopleIntro}</p>
+      <div className="character-toolbar">
+        <input
+          type="search"
+          aria-label={words.search}
+          placeholder={words.searchPlaceholder}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
         />
+        <select
+          aria-label={words.directoryFilter}
+          value={filter}
+          onChange={(event) =>
+            navigate("players", { peopleFilter: event.target.value })
+          }
+        >
+          <option value="all">{words.allPeople}</option>
+          <option value="players">{words.players}</option>
+          <option value="characters">{words.characters}</option>
+        </select>
         {gm && (
-          <Button
-            kind="secondary"
-            icon="plus"
-            onClick={() => setModal({ kind: "addPlayer" })}
-          >
+          <Button icon="plus" onClick={() => setModal({ kind: "addPlayer" })}>
             {t("Personage toevoegen")}
           </Button>
         )}
       </div>
-      <Roster
-        items={ranked(game).filter(
-          (person) =>
-            filter === "all" ||
-            Boolean(person.npc) === (filter === "characters"),
-        )}
-      />
+      {characters.length ? (
+        <div className="character-grid">
+          {characters.map(({ person, name, role }) => (
+            <CharacterCard
+              key={person.id}
+              person={person}
+              name={name}
+              role={role}
+              words={words}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="work-list empty" role="status">
+          {query ? words.noMatches : words.noPeople}
+        </p>
+      )}
     </div>
   );
 }
 export function Feed() {
   const { language, t } = useI18n();
   const { game, gm, player, mutate, setModal } = useGame();
+  const words = copy[language];
   const voter = gm ? "gm" : player.id;
+  const leaders = ranked(game)
+    .filter((person) => !person.npc)
+    .slice(0, 5);
   return (
     <>
-      <Heading title={t("Kampvuur")}>
-        <Button icon="pen" onClick={() => setModal({ kind: "post" })}>
-          {t("Schrijf iets")}
-        </Button>
-      </Heading>
-      <div className="single">
-        {!game.posts.length && (
-          <p className="work-list empty">{copy[language].noPosts}</p>
-        )}
-        {game.posts.map((post) => {
-          const author = game.players.find((p) => p.id === post.playerId) || {
-            av: "tide",
-            name: "Spelleider",
-            role: "Beheerder",
-          };
-          const likes =
-            post.likes + Object.values(post.votes).filter(Boolean).length;
-          return (
-            <article className="post" key={post.id}>
-              <div className="identity">
-                <Avatar player={author} />
-                <span>
-                  <b>
-                    {post.playerId === "gm"
-                      ? t("Spelleider")
-                      : exampleText(t, examples.players, author, "name")}
-                  </b>
-                  <span className="small">
-                    {post.playerId === "gm"
-                      ? t("Beheerder")
-                      : author.registered
-                        ? t("Speler")
-                        : exampleText(t, examples.players, author, "role")}
+      <Heading title={t("Kampvuur")} />
+      <p className="work-page-intro">{words.campfireIntro}</p>
+      <div className="work-columns">
+        <div className="work-feed">
+          <section className="work-card work-composer">
+            <h2>{words.share}</h2>
+            <Button icon="pen" onClick={() => setModal({ kind: "post" })}>
+              {t("Schrijf iets")}
+            </Button>
+          </section>
+          {!game.posts.length && (
+            <p className="work-list empty">{words.noPosts}</p>
+          )}
+          {game.posts.map((post) => {
+            const author = game.players.find((p) => p.id === post.playerId) || {
+              av: "tide",
+              name: "Spelleider",
+              role: "Beheerder",
+            };
+            const likes =
+              post.likes + Object.values(post.votes).filter(Boolean).length;
+            return (
+              <article className="post" key={post.id}>
+                <div className="identity">
+                  <Avatar player={author} />
+                  <span>
+                    <b>
+                      {post.playerId === "gm"
+                        ? t("Spelleider")
+                        : exampleText(t, examples.players, author, "name")}
+                    </b>
+                    <span className="small">
+                      {post.playerId === "gm"
+                        ? t("Beheerder")
+                        : author.registered
+                          ? t("Speler")
+                          : exampleText(t, examples.players, author, "role")}
+                    </span>
                   </span>
-                </span>
-              </div>
-              <p>{exampleText(t, examples.posts, post, "msg")}</p>
-              <button
-                className="like"
-                aria-label={t("Waardering geven, {count} waarderingen", {
-                  count: likes,
-                })}
-                aria-pressed={!!post.votes[voter]}
-                onClick={() => mutate("like", { id: post.id })}
-              >
-                <Icon name="heart" /> {likes}
-              </button>
-            </article>
-          );
-        })}
+                </div>
+                <p>{exampleText(t, examples.posts, post, "msg")}</p>
+                <button
+                  className="like"
+                  aria-label={t("Waardering geven, {count} waarderingen", {
+                    count: likes,
+                  })}
+                  aria-pressed={!!post.votes[voter]}
+                  onClick={() => mutate("like", { id: post.id })}
+                >
+                  <Icon name="heart" /> {likes}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+        <aside className="work-card" aria-labelledby="feed-leaderboard-title">
+          <h2 id="feed-leaderboard-title">
+            <Icon name="trophy" />
+            {words.leaderboard}
+          </h2>
+          {leaders.length ? (
+            <ol className="work-rankings">
+              {leaders.map((person) => (
+                <li key={person.id}>
+                  <button
+                    type="button"
+                    onClick={() => setModal({ kind: "player", id: person.id })}
+                  >
+                    <Avatar player={person} />
+                    <strong>
+                      {exampleText(t, examples.players, person, "name")}
+                    </strong>
+                    <span>{points(game, person)} pt</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="work-callout">{words.noRankedPlayers}</p>
+          )}
+        </aside>
       </div>
     </>
   );

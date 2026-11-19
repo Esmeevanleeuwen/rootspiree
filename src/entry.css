@@ -7,15 +7,20 @@
   color: var(--color-text);
 }
 
+.entry-masthead {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-sidebar);
+}
+
 .entry-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  width: min(var(--content-max), calc(100% - 2 * var(--entry-gutter)));
+  max-width: var(--content-max);
   min-height: var(--nav-height);
   margin-inline: auto;
-  padding-block: var(--space-3);
+  padding: var(--space-3) var(--content-gutter);
 }
 
 .entry-header-actions,
@@ -27,24 +32,6 @@
 
 .entry-brand {
   padding: 0;
-  color: var(--color-text);
-  font: 750 1.6rem / 0.95 var(--font-display);
-  letter-spacing: -0.055em;
-  text-align: left;
-}
-
-.entry-brand svg {
-  width: 2rem;
-  height: 2rem;
-  flex: none;
-}
-
-.entry-brand small {
-  display: block;
-  margin-top: var(--space-1);
-  color: var(--color-accent);
-  font: 750 0.58rem / 1 var(--font-sans);
-  letter-spacing: 0.28em;
 }
 
 .entry-language,
@@ -55,7 +42,7 @@
   padding: var(--space-1);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: var(--color-sidebar);
+  background: var(--color-surface-raised);
 }
 
 .entry-language button,
@@ -66,6 +53,10 @@
   color: var(--color-muted);
   font-size: var(--font-size-sm);
   white-space: nowrap;
+}
+
+.entry-language-short {
+  display: none;
 }
 
 .entry-language button:hover,
@@ -90,13 +81,14 @@
   margin: clamp(var(--space-5), 5vw, var(--space-8)) auto var(--space-8);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: var(--gradient-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
 }
 
 .entry-site h1 {
   color: var(--color-text);
   font-family: var(--font-display);
-  font-weight: 740;
+  font-weight: 400;
   line-height: 1.08;
   letter-spacing: -0.045em;
 }
@@ -111,7 +103,8 @@
 }
 
 .entry-auth-art {
-  background: var(--color-sidebar) 71% center / cover no-repeat;
+  background: var(--art-aether) 49% center / cover no-repeat
+    var(--color-surface-hover);
 }
 
 .entry-auth-content {
@@ -257,8 +250,35 @@
   }
 
   .entry-auth-art {
-    min-height: clamp(4.5rem, 18vw, 6rem);
-    background-position: 70% 47%;
+    min-height: clamp(6rem, 24vw, 9rem);
+    background-position: center 43%;
+  }
+}
+
+@media (max-width: 450px) {
+  .entry-header .entry-language-full {
+    display: none;
+  }
+
+  .entry-header .entry-language-short {
+    display: inline;
+  }
+
+  .entry-header .entry-language button {
+    min-height: 2.125rem;
+    padding-inline: var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+}
+
+@media (max-width: 360px) {
+  .entry-header .brand-lockup {
+    gap: var(--space-1);
+    font-size: 0.82rem;
+  }
+
+  .entry-header .brand-lockup small {
+    font-size: 0.5rem;
   }
 }
 

@@ -1,10 +1,12 @@
 export const landingCopy = {
   en: {
-    heroTitle: "Practice what",
-    heroAccent: "matters to you.",
+    heroEyebrow: "Welcome to LevelUp World · Chapter I",
+    heroTitle: "A world where growth becomes an adventure.",
     heroDescription:
       "Turn a personal goal into small real-life quests. Try something new and get feedback from your Game Master.",
     start: "Start playing",
+    home: "Home",
+    worldNav: "World",
     how: "How it works",
     exampleNav: "See a quest",
     navLabel: "Explore LevelUp World",
@@ -39,21 +41,23 @@ export const landingCopy = {
       "Write down the question you asked and one thing you learned from the answer.",
     completion:
       "Your question follows up on something the other person actually said.",
-    worldTitle: "Find your place in the world",
-    worldIntro:
-      "LevelUp World gives those real-life quests a fantasy setting. Find your house, meet other players, and share what you’re learning around the Campfire.",
+    worldTitle: "Discover your adventure",
+    worldIntro: "Four regions, four ways to grow.",
+    openMap: "View world map",
     ctaTitle: "What would you like to get better at?",
     ctaBody: "Create an account and choose a goal to bring into the game.",
     memberCtaBody: "Bring your next goal into the game.",
-    pageTitle: "LevelUp World | Real-life quests for skills you care about",
+    pageTitle: "LevelUp World · Aether Edition",
     footerText: "A social game for practicing real-life skills.",
   },
   nl: {
-    heroTitle: "Oefen wat",
-    heroAccent: "voor jou telt.",
+    heroEyebrow: "Welkom in LevelUp World · Hoofdstuk I",
+    heroTitle: "Een wereld waarin groei een avontuur wordt.",
     heroDescription:
       "Maak van een persoonlijk doel kleine opdrachten voor het echte leven. Probeer iets nieuws en krijg feedback van je spelleider.",
     start: "Begin met spelen",
+    home: "Start",
+    worldNav: "Wereld",
     how: "Hoe het werkt",
     exampleNav: "Bekijk een opdracht",
     navLabel: "Verken LevelUp World",
@@ -87,14 +91,14 @@ export const landingCopy = {
     submission:
       "Schrijf op welke vraag je stelde en wat je van het antwoord hebt geleerd.",
     completion: "Je vraag gaat in op iets wat de ander echt heeft gezegd.",
-    worldTitle: "Vind je plek in de speelwereld",
-    worldIntro:
-      "In LevelUp World speel je jouw opdrachten in een fantasiewereld. Vind je huis, ontmoet andere spelers en vertel rond het kampvuur wat je leert.",
+    worldTitle: "Ontdek jouw avontuur",
+    worldIntro: "Vier regio’s, vier manieren om te groeien.",
+    openMap: "Bekijk wereldkaart",
     ctaTitle: "Waar zou jij beter in willen worden?",
     ctaBody:
       "Maak een account aan en kies een doel om in het spel aan te werken.",
     memberCtaBody: "Kies je volgende doel in het spel.",
-    pageTitle: "LevelUp World | Oefen wat voor jou telt",
+    pageTitle: "LevelUp World · Aether Edition",
     footerText:
       "Een sociaal spel om te oefenen met vaardigheden voor het echte leven.",
   },

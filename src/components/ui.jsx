@@ -3,12 +3,20 @@ import { useId, useLayoutEffect, useRef } from "react";
 import { useGame } from "../store.jsx";
 import { avatarIcon, houseIcon, illustratedIcons, paths } from "../icons.js";
 
-export function BrandMark() {
+export function BrandLockup() {
   return (
-    <svg className="brand-mark" aria-hidden="true" viewBox="0 0 42 42">
-      <path d="M21 11c1.8 5.3 4.7 8.2 10 10-5.3 1.8-8.2 4.7-10 10-1.8-5.3-4.7-8.2-10-10 5.3-1.8 8.2-4.7 10-10Z" />
-      <circle cx="21" cy="21" r="1.6" />
-    </svg>
+    <span className="brand-lockup">
+      <svg className="brand-mark" aria-hidden="true" viewBox="0 0 32 32">
+        <path
+          fillRule="evenodd"
+          d="M16 1c1.4 9 5.9 13.6 15 15-9.1 1.4-13.6 6-15 15-1.4-9-5.9-13.6-15-15C10.1 14.6 14.6 10 16 1Zm0 7c-1.3 3.7-4.3 6.7-8 8 3.7 1.3 6.7 4.3 8 8 1.3-3.7 4.3-6.7 8-8-3.7-1.3-6.7-4.3-8-8Z"
+        />
+      </svg>
+      <span>
+        LevelUp <span className="brand-world">World</span>
+        <small>Grow into legend</small>
+      </span>
+    </span>
   );
 }
 export function Icon({ name }) {

@@ -46,6 +46,31 @@ test("quest editor URLs restore the same draft context", () => {
   );
 });
 
+test("region links retain the selected region and its quest template", () => {
+  const world = workspaceHash("world", { region: "shadowwood" });
+  assert.equal(screenHash("game", screenHash("auth", world)), world);
+  assert.deepEqual(workspaceView(world, false), {
+    page: "world",
+    region: "shadowwood",
+  });
+  const questEditor = {
+    draftId: "regional-draft",
+    template: "shadowwood",
+    returnPage: "world",
+  };
+  const editor = workspaceHash("questEditor", { questEditor });
+  assert.deepEqual(workspaceView(editor, true), {
+    page: "questEditor",
+    questEditor,
+  });
+  assert.deepEqual(workspaceView(editor, false), { page: "home" });
+  assert.equal(workspaceHash("world", { region: "unknown" }), "#/play/world");
+  assert.deepEqual(workspaceView("#/play/quests/edit?template=unknown", true), {
+    page: "questEditor",
+    questEditor: {},
+  });
+});
+
 test("workspace URLs normalize role-restricted views and round trip list filters", () => {
   assert.deepEqual(workspaceView("#/play/people/accounts", false), {
     page: "home",

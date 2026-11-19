@@ -1,82 +1,177 @@
 import { houses } from "../content.js";
+import { experience } from "../experience.js";
 import { points } from "../game.js";
-import { useI18n } from "../i18n.jsx";
-import { houseIcon } from "../icons.js";
+import { questText, useI18n } from "../i18n.jsx";
 import { useGame } from "../store.jsx";
-import { QuestList } from "./QuestList.jsx";
-import { Avatar, Button, Heading, Icon } from "./ui.jsx";
+import { AetherHero, AetherRegions } from "./AetherShowcase.jsx";
+import { Avatar, Button } from "./ui.jsx";
 import "../dashboard.css";
 
 const copy = {
   en: {
-    commandCenter: "Command Center",
-    hero: "You shape their next adventure.",
-    intro: "Help players grow through small, achievable quests.",
-    players: "Players",
-    characters: "Characters",
-    activeQuests: "Active quests",
-    toReview: "To review",
-    needsReview: "Needs review",
-    queueEmpty: "Submitted quests will appear here.",
-    reviewQueue: "View review queue",
-    drafts: "Drafts",
-    leaderboard: "Leaderboard",
+    welcome: "Welcome to LevelUp World",
+    hero: "A world where growth becomes an adventure.",
+    intro:
+      "Discover your strengths, help other heroes grow, and build a living fantasy world together. Every small step counts.",
+    enter: "Enter the world",
+    meet: "Meet the characters",
+    regions: "Discover your adventure",
+    regionIntro: "Four regions, four ways to grow",
+    openMap: "View world map",
+    featured: "Featured heroes",
+    allPeople: "All characters",
     noPlayers: "Players appear here after completing setup.",
-    viewPlayers: "View players",
-    world: "Journey through the world",
-    openMap: "Open world map",
+    activity: "What’s happening now?",
+    openCampfire: "Open Campfire",
+    noActivity: "Submitted and reviewed quests will appear here.",
+    submitted: "submitted a quest",
+    passed: "completed a quest",
+    failed: "received feedback on a quest",
+    desk: "Your Game Master dashboard",
+    actions: "Give the story direction.",
+    players: ["hero", "heroes"],
+    npcs: ["NPC", "NPCs"],
+    active: ["open quest", "open quests"],
+    review: ["awaiting review", "awaiting review"],
+    drafts: ["draft", "drafts"],
+    growth: "How the world grows",
+    steps: [
+      ["World & story", "Read the story of the Listening Valley."],
+      ["Characters", "Meet players and fictional characters."],
+      ["Quests & growth", "Turn personal goals into small, practical quests."],
+      ["Community", "Share what you learn around the Campfire."],
+      ["Game Master", "See how quests, feedback, and scoring work."],
+    ],
   },
   nl: {
-    commandCenter: "Commandocentrum",
-    hero: "Jij geeft vorm aan hun volgende avontuur.",
-    intro: "Help spelers groeien met kleine, haalbare opdrachten.",
-    players: "Spelers",
-    characters: "Personages",
-    activeQuests: "Actieve opdrachten",
-    toReview: "Te beoordelen",
-    needsReview: "Te beoordelen",
-    queueEmpty: "Ingeleverde opdrachten verschijnen hier.",
-    reviewQueue: "Bekijk inzendingen",
-    drafts: "Concepten",
-    leaderboard: "Ranglijst",
+    welcome: "Welkom in LevelUp World",
+    hero: "Een wereld waarin groei een avontuur wordt.",
+    intro:
+      "Ontdek je eigen kracht, help andere helden groeien en bouw samen aan een levende fantasywereld. Elke kleine stap telt.",
+    enter: "Betreed de wereld",
+    meet: "Ontdek de personages",
+    regions: "Ontdek jouw avontuur",
+    regionIntro: "Vier regio’s, vier manieren om te groeien",
+    openMap: "Bekijk wereldkaart",
+    featured: "Uitgelichte helden",
+    allPeople: "Alle personages",
     noPlayers:
       "Spelers verschijnen hier zodra ze hun account hebben ingesteld.",
-    viewPlayers: "Bekijk spelers",
-    world: "Reis door de wereld",
-    openMap: "Open de wereldkaart",
+    activity: "Wat gebeurt er nu?",
+    openCampfire: "Open het kampvuur",
+    noActivity: "Ingeleverde en beoordeelde opdrachten verschijnen hier.",
+    submitted: "leverde een opdracht in",
+    passed: "voltooide een opdracht",
+    failed: "kreeg feedback op een opdracht",
+    desk: "Jouw spelleiderdashboard",
+    actions: "Geef het verhaal richting.",
+    players: ["held", "helden"],
+    npcs: ["NPC", "NPC’s"],
+    active: ["open opdracht", "open opdrachten"],
+    review: ["wacht op beoordeling", "wachten op beoordeling"],
+    drafts: ["concept", "concepten"],
+    growth: "Hoe de wereld verder groeit",
+    steps: [
+      ["Wereld & verhaal", "Lees het verhaal van de Luistervallei."],
+      ["Personages", "Ontmoet spelers en fictieve personages."],
+      [
+        "Opdrachten & groei",
+        "Maak kleine opdrachten rond persoonlijke doelen.",
+      ],
+      ["Community", "Deel bij het kampvuur wat je leert."],
+      ["Spelleider", "Lees hoe opdrachten, feedback en punten werken."],
+    ],
   },
 };
 
-function WayfinderMark() {
+function FeaturedHeroes({ entries, words, showPlayer, showPeople }) {
+  const { t } = useI18n();
   return (
-    <svg className="command-mark" viewBox="0 0 120 120" aria-hidden="true">
-      <path
-        fill="currentColor"
-        fillRule="evenodd"
-        d="M60 0C57 34 38 55 0 60c38 5 57 26 60 60 3-34 22-55 60-60C82 55 63 34 60 0Zm0 29c5 15 15 26 33 31-18 5-28 16-33 31-5-15-15-26-33-31 18-5 28-16 33-31Z"
-      />
-    </svg>
+    <section
+      className="aether-dashboard-panel"
+      aria-labelledby="featured-title"
+    >
+      <div className="aether-dashboard-panel-heading">
+        <h2 id="featured-title">{words.featured}</h2>
+        <Button kind="secondary" onClick={showPeople}>
+          {words.allPeople}
+        </Button>
+      </div>
+      {entries.length ? (
+        <ul className="aether-featured-heroes">
+          {entries.map(({ player, score, level }) => (
+            <li key={player.id}>
+              <button type="button" onClick={() => showPlayer(player.id)}>
+                <Avatar player={player} large />
+                <strong>{player.name}</strong>
+                <span className="aether-hero-role">
+                  {t(houses[player.journey?.house]?.name ?? player.role)}
+                </span>
+                <span className="aether-hero-score">
+                  {score} pt · Lv {level}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="aether-dashboard-empty">{words.noPlayers}</p>
+      )}
+    </section>
   );
 }
 
-function Leaderboard({ entries, words, activate }) {
-  return entries.length ? (
-    <ol className="command-leaderboard">
-      {entries.map(({ player, score }, index) => (
-        <li key={player.id}>
-          <button type="button" onClick={() => activate(player.id)}>
-            <span className="command-rank" aria-hidden="true">
-              #{index + 1}
-            </span>
-            <Avatar player={player} />
-            <strong>{player.name}</strong>
-            <span className="command-points">{score} pt</span>
-          </button>
-        </li>
-      ))}
-    </ol>
-  ) : (
-    <p className="command-empty">{words.noPlayers}</p>
+function QuestActivity({ entries, words, showQuest, showFeed }) {
+  const { t } = useI18n();
+  return (
+    <section
+      className="aether-dashboard-panel"
+      aria-labelledby="activity-title"
+    >
+      <div className="aether-dashboard-panel-heading">
+        <h2 id="activity-title">{words.activity}</h2>
+        <Button kind="secondary" onClick={showFeed}>
+          {words.openCampfire}
+        </Button>
+      </div>
+      {entries.length ? (
+        <ul className="aether-quest-activity">
+          {entries.map(({ quest, player }) => {
+            const pending = quest.state === "Ingeleverd";
+            const passed = quest.state === "Behaald";
+            const message = pending
+              ? words.submitted
+              : passed
+                ? words.passed
+                : words.failed;
+            const status = pending
+              ? t("Ingeleverd")
+              : passed
+                ? "+" + quest.plus + " pt"
+                : "−" + quest.minus + " pt";
+
+            return (
+              <li key={quest.id}>
+                <button type="button" onClick={() => showQuest(quest.id)}>
+                  <Avatar player={player} />
+                  <span className="aether-quest-activity-copy">
+                    <strong>{player.name}</strong>
+                    <span>
+                      {message} · {questText(t, quest, "name")}
+                    </span>
+                  </span>
+                  <span className="aether-quest-delta" data-state={quest.state}>
+                    {status}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="aether-dashboard-empty">{words.noActivity}</p>
+      )}
+    </section>
   );
 }
 
@@ -85,169 +180,148 @@ export function GameMasterDashboard() {
   const words = copy[language];
   const { game, navigate, setModal } = useGame();
   const players = game.players.filter((player) => !player.npc);
+  const playersById = new Map(
+    game.players.map((player) => [player.id, player]),
+  );
+  const active = game.quests.filter((quest) => quest.state === "Open");
   const pending = game.quests.filter((quest) => quest.state === "Ingeleverd");
-  const leaderboard = players
+  const reviewed = game.quests.filter((quest) =>
+    ["Behaald", "Niet behaald"].includes(quest.state),
+  );
+  const activity = [...pending.reverse(), ...reviewed.reverse()]
+    .filter((quest) => playersById.has(quest.playerId))
+    .slice(0, 2)
+    .map((quest) => ({ quest, player: playersById.get(quest.playerId) }));
+  const featured = players
     .map((player) => ({ player, score: points(game, player) }))
-    .sort((first, second) => second.score - first.score)
-    .slice(0, 4);
-  const draftCount = game.questDrafts?.length ?? 0;
-  const openQuests = (questFilter) => navigate("quests", { questFilter });
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((entry) => ({
+      ...entry,
+      level: experience(game, entry.player).level,
+    }));
+
+  const showWorld = () => navigate("world");
+  const showPeople = () => navigate("players");
+  const showFeed = () => navigate("feed");
+  const showQuests = (questFilter) => navigate("quests", { questFilter });
   const stats = [
-    {
-      label: words.players,
-      value: players.length,
-      icon: "shield",
-      open: () => navigate("players"),
-    },
-    {
-      label: words.characters,
-      value: game.players.length - players.length,
-      icon: "owl",
-      open: () => navigate("players", { peopleFilter: "characters" }),
-    },
-    {
-      label: words.activeQuests,
-      value: game.quests.filter((quest) => quest.state === "Open").length,
-      icon: "swords",
-      open: () => openQuests("Open"),
-    },
-    {
-      label: words.toReview,
-      value: pending.length,
-      icon: "scroll",
-      open: () => openQuests("Ingeleverd"),
-    },
+    [
+      words.players,
+      players.length,
+      () => navigate("players", { peopleFilter: "players" }),
+    ],
+    [
+      words.npcs,
+      game.players.length - players.length,
+      () => navigate("players", { peopleFilter: "characters" }),
+    ],
+    [words.active, active.length, () => showQuests("Open")],
+    [words.review, pending.length, () => showQuests("Ingeleverd")],
+    [
+      words.drafts,
+      game.questDrafts?.length ?? 0,
+      () => showQuests("Concepten"),
+    ],
+  ];
+  const guideLinks = [
+    () => setModal({ kind: "chapter" }),
+    showPeople,
+    () => navigate("quests"),
+    showFeed,
+    () => navigate("guide"),
   ];
 
   return (
-    <div className="command-center">
-      <Heading title={words.commandCenter} />
-      <section className="command-hero" aria-labelledby="command-hero-title">
-        <div className="command-hero-copy">
-          <button
-            className="command-chapter"
-            type="button"
-            onClick={() => setModal({ kind: "chapter" })}
-          >
-            {t("Hoofdstuk I")} · {t("De Luistervallei")}
-          </button>
-          <h2 id="command-hero-title">{words.hero}</h2>
-          <p>{words.intro}</p>
-          <div className="actions">
-            <Button
-              icon="swords"
-              onClick={() =>
-                navigate("questEditor", { questEditor: { returnPage: "home" } })
-              }
-            >
-              {t("Nieuwe opdracht")}
-            </Button>
-            <Button
-              kind="secondary"
-              icon="plus"
-              onClick={() => setModal({ kind: "addPlayer" })}
-            >
-              {t("Personage toevoegen")}
-            </Button>
-          </div>
-        </div>
-        <WayfinderMark />
-      </section>
+    <div className="aether-dashboard">
+      <AetherHero
+        eyebrow={words.welcome + " · " + t("Hoofdstuk I")}
+        title={words.hero}
+        description={words.intro}
+      >
+        <Button onClick={showWorld}>{words.enter}</Button>
+        <Button kind="secondary" onClick={showPeople}>
+          {words.meet}
+        </Button>
+      </AetherHero>
 
-      <div className="command-stats">
-        {stats.map(({ label, value, icon, open }) => (
-          <button
-            key={label}
-            type="button"
-            className="command-stat"
-            onClick={open}
-          >
-            <span>{label}</span>
-            <Icon name={icon} />
-            <strong>{value}</strong>
-          </button>
-        ))}
-      </div>
+      <AetherRegions
+        title={words.regions}
+        description={words.regionIntro}
+        action={
+          <Button kind="secondary" onClick={showWorld}>
+            {words.openMap}
+          </Button>
+        }
+        onSelect={(_, region) => navigate("world", { region })}
+      />
 
-      <div className="command-grid">
-        <section
-          className="command-card command-review"
-          aria-labelledby="command-review-title"
-        >
-          <div className="command-card-head">
-            <h2 id="command-review-title">
-              <Icon name="lightning" />
-              {words.needsReview}
-            </h2>
-            <Button kind="textbtn" onClick={() => openQuests("Ingeleverd")}>
-              {words.reviewQueue}
-            </Button>
-          </div>
-          {pending.length ? (
-            <div className="work-list">
-              <QuestList items={pending.slice(0, 3)} />
-            </div>
-          ) : (
-            <p className="command-empty">{words.queueEmpty}</p>
-          )}
-          <button
-            className="command-drafts"
-            type="button"
-            onClick={() => openQuests("Concepten")}
-          >
-            <Icon name="pen" />
-            <span>{words.drafts}</span>
-            <strong>{draftCount}</strong>
-            <Icon name="chev" />
-          </button>
-        </section>
-
-        <section
-          className="command-card"
-          aria-labelledby="command-leaderboard-title"
-        >
-          <div className="command-card-head">
-            <h2 id="command-leaderboard-title">
-              <Icon name="trophy" />
-              {words.leaderboard}
-            </h2>
-            <Button kind="textbtn" onClick={() => navigate("players")}>
-              {words.viewPlayers}
-            </Button>
-          </div>
-          <Leaderboard
-            entries={leaderboard}
-            words={words}
-            activate={(id) => setModal({ kind: "player", id })}
-          />
-        </section>
+      <div className="aether-dashboard-grid">
+        <FeaturedHeroes
+          entries={featured}
+          words={words}
+          showPlayer={(id) => setModal({ kind: "player", id })}
+          showPeople={showPeople}
+        />
+        <QuestActivity
+          entries={activity}
+          words={words}
+          showQuest={(id) => setModal({ kind: "quest", id })}
+          showFeed={showFeed}
+        />
       </div>
 
       <section
-        className="command-card command-world"
-        aria-labelledby="command-world-title"
+        className="aether-dashboard-panel aether-game-master"
+        aria-labelledby="game-master-title"
       >
-        <div className="command-card-head">
-          <h2 id="command-world-title">
-            <Icon name="earth" />
-            {words.world}
-          </h2>
-          <Button kind="textbtn" onClick={() => navigate("world")}>
-            {words.openMap}
+        <div>
+          <p className="eyebrow">{words.desk}</p>
+          <h2 id="game-master-title">{words.actions}</h2>
+          <ul className="aether-admin-stats">
+            {stats.map(([labels, count, open]) => (
+              <li key={labels[1]}>
+                <button type="button" onClick={open}>
+                  {count} {labels[count === 1 ? 0 : 1]}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="aether-admin-actions">
+          <Button
+            icon="plus"
+            onClick={() =>
+              navigate("questEditor", { questEditor: { returnPage: "home" } })
+            }
+          >
+            {t("Nieuwe opdracht")}
+          </Button>
+          <Button
+            kind="secondary"
+            icon="plus"
+            onClick={() => setModal({ kind: "addPlayer" })}
+          >
+            {t("Personage toevoegen")}
           </Button>
         </div>
-        <div className="command-houses">
-          {Object.entries(houses).map(([key, house]) => (
-            <Button
-              key={key}
-              kind="secondary"
-              icon={houseIcon(key)}
-              onClick={() => setModal({ kind: "house", key })}
-            >
-              {t(house.name)}
-            </Button>
+      </section>
+
+      <section
+        className="aether-dashboard-panel"
+        aria-labelledby="growth-title"
+      >
+        <h2 id="growth-title">{words.growth}</h2>
+        <ul className="aether-growth">
+          {words.steps.map(([label, description], index) => (
+            <li key={label}>
+              <button type="button" onClick={guideLinks[index]}>
+                <strong>{label}</strong>
+                <span>{description}</span>
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
     </div>
   );

@@ -12,7 +12,7 @@ import {
   QuestPage,
 } from "./Community.jsx";
 import { LanguageSelector, QuizForm } from "./Entry.jsx";
-import { GameNavigation, GameTopBar } from "./GameNavigation.jsx";
+import { GameTopBar } from "./GameNavigation.jsx";
 import { Journey, JourneyDialog } from "./Journey.jsx";
 import { BioDialog, Profile } from "./Profile.jsx";
 import { QuestEditor } from "./QuestEditor.jsx";
@@ -125,7 +125,15 @@ function Retake({ words, language }) {
 function PeopleWorkspace({ page, words, navigate }) {
   return (
     <>
-      <Heading title={words.people} />
+      <Heading
+        label={"LevelUp World / " + words.chapter}
+        title={page === "accounts" ? words.accounts : words.heroes}
+      >
+        <span className="app-chapter">
+          <span aria-hidden="true">✦ </span>
+          {words.chapterNumber}
+        </span>
+      </Heading>
       <nav className="app-people-switch" aria-label={words.peopleViews}>
         {["players", "accounts"].map((id) => (
           <button
@@ -159,24 +167,26 @@ function Settings({
   return (
     <div className="app-settings">
       <Heading title={words.settings} />
-      <section className="panel app-setting">
-        <h2>{words.language}</h2>
-        <LanguageSelector language={language} setLanguage={setLanguage} />
-      </section>
-      <section className="panel app-setting">
-        <h2>{words.account}</h2>
-        <p>{account.name}</p>
-        <div className="actions">
-          {!gm && (
-            <Button kind="textbtn" onClick={() => navigate("profile")}>
-              {words.profile}
+      <div className="app-settings-grid">
+        <section className="panel app-setting">
+          <h2>{words.language}</h2>
+          <LanguageSelector language={language} setLanguage={setLanguage} />
+        </section>
+        <section className="panel app-setting">
+          <h2>{words.account}</h2>
+          <p>{account.name}</p>
+          <div className="actions">
+            {!gm && (
+              <Button kind="textbtn" onClick={() => navigate("profile")}>
+                {words.profile}
+              </Button>
+            )}
+            <Button kind="textbtn" onClick={onLogout}>
+              {words.logOut}
             </Button>
-          )}
-          <Button kind="textbtn" onClick={onLogout}>
-            {words.logOut}
-          </Button>
-        </div>
-      </section>
+          </div>
+        </section>
+      </div>
       <Button kind="textbtn" icon="info" onClick={() => navigate("guide")}>
         {words.about}
       </Button>
@@ -255,7 +265,7 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
 
   const screens = {
     home: gm ? <Overview /> : <Journey />,
-    world: <WorldGuide title={words.world} intro={words.worldIntro} />,
+    world: <WorldGuide />,
     settings: (
       <Settings
         account={account}
@@ -300,25 +310,18 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
   };
   return (
     <div className="app-shell">
-      <GameNavigation gm={gm} page={page} navigate={navigate} words={words} />
+      <GameTopBar
+        account={account}
+        gm={gm}
+        page={page}
+        language={language}
+        setLanguage={setLanguage}
+        navigate={navigate}
+        onLogout={onLogout}
+        words={words}
+      />
       <main className="app-main">
-        <GameTopBar
-          account={account}
-          gm={gm}
-          page={page}
-          language={language}
-          setLanguage={setLanguage}
-          navigate={navigate}
-          onLogout={onLogout}
-          words={words}
-        />
-        <div
-          className={
-            "wrap app-content" +
-            (gm && page === "home" ? " app-content-dashboard" : "")
-          }
-          ref={content}
-        >
+        <div className="wrap app-content" ref={content}>
           {(warning || authError) && (
             <p role="alert" className="detailbox">
               {authError ||
@@ -354,6 +357,7 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
           </div>
         </div>
       </main>
+      <footer className="app-footer">LevelUp World · Aether Edition</footer>
       {ready &&
         modal &&
         (modal.kind === "bio" ? (

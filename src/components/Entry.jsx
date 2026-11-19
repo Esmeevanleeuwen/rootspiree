@@ -1,9 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { api } from "../api.js";
-import valley from "../assets/vallei.webp";
 import { agreement, statements } from "../content.js";
 import { translate } from "../i18n.jsx";
-import { BrandMark, Button, Field, Icon } from "./ui.jsx";
+import { BrandLockup, Button, Field, Icon } from "./ui.jsx";
 import { LandingNavigation, LandingPage } from "./LandingPage.jsx";
 import "../entry.css";
 
@@ -128,17 +127,25 @@ export function LanguageSelector({ language, setLanguage }) {
         type="button"
         lang="en"
         onClick={() => setLanguage("en")}
+        aria-label="English"
         aria-pressed={language === "en"}
       >
-        English
+        <span className="entry-language-full">English</span>
+        <span className="entry-language-short" aria-hidden="true">
+          EN
+        </span>
       </button>
       <button
         type="button"
         lang="nl"
         onClick={() => setLanguage("nl")}
+        aria-label="Nederlands"
         aria-pressed={language === "nl"}
       >
-        Nederlands
+        <span className="entry-language-full">Nederlands</span>
+        <span className="entry-language-short" aria-hidden="true">
+          NL
+        </span>
       </button>
     </div>
   );
@@ -152,10 +159,7 @@ function Wordmark({ onHome, label }) {
       onClick={onHome}
       aria-label={label}
     >
-      <BrandMark />
-      <span>
-        LevelUp <small>WORLD</small>
-      </span>
+      <BrandLockup />
     </button>
   );
 }
@@ -223,11 +227,7 @@ function Auth({ strings, language, go, onAccount, mode }) {
   }
   return (
     <main className="entry-auth">
-      <div
-        className="entry-auth-art"
-        style={{ backgroundImage: `url("${valley}")` }}
-        aria-hidden="true"
-      />
+      <div className="entry-auth-art" aria-hidden="true" />
       <div className="entry-auth-content">
         <div
           className="entry-auth-picker"
@@ -661,11 +661,16 @@ export function Entry({
   }, [accountId]);
   useEffect(() => {
     const sectionId = isLanding ? window.location.hash.slice(1) : "";
-    const section = ["how-it-works", "example-quest"].includes(sectionId)
+    const section = [
+      "welcome",
+      "world-preview",
+      "how-it-works",
+      "example-quest",
+    ].includes(sectionId)
       ? document.getElementById(sectionId)
       : null;
     const heading =
-      section?.querySelector("h2") ?? focus.current?.querySelector("h1");
+      section?.querySelector("h1, h2") ?? focus.current?.querySelector("h1");
     heading?.setAttribute("tabindex", "-1");
     heading?.focus({ preventScroll: true });
     if (section) section.scrollIntoView?.();
@@ -687,21 +692,23 @@ export function Entry({
       className={"entry-site" + (isLanding ? " landing-site" : "")}
       ref={focus}
     >
-      <header className="entry-header">
-        <Wordmark label={strings.home} onHome={openHome} />
-        {isLanding && <LandingNavigation language={language} />}
-        <div className="entry-header-actions">
-          <LanguageSelector language={language} setLanguage={setLanguage} />
-          {isLanding && !account && (
-            <Button kind="landing-login" onClick={() => go("auth")}>
-              {strings.login}
-            </Button>
-          )}
-          {account && onLogout && (
-            <Button kind="textbtn" onClick={logout}>
-              {strings.logout}
-            </Button>
-          )}
+      <header className="entry-masthead">
+        <div className="entry-header">
+          <Wordmark label={strings.home} onHome={openHome} />
+          {isLanding && <LandingNavigation language={language} />}
+          <div className="entry-header-actions">
+            <LanguageSelector language={language} setLanguage={setLanguage} />
+            {isLanding && !account && (
+              <Button kind="landing-login" onClick={() => go("auth")}>
+                {strings.login}
+              </Button>
+            )}
+            {account && onLogout && (
+              <Button kind="textbtn" onClick={logout}>
+                {strings.logout}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
       {authError && (

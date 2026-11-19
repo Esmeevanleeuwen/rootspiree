@@ -1,3 +1,5 @@
+import { getAetherRegion } from "./aether-regions.js";
+
 const entryPaths = {
   landing: "",
   auth: "/login",
@@ -90,6 +92,10 @@ export function workspaceView(hash, gm) {
     }
     if (!gm && params.get("scope") === "all") view.questScope = "all";
   }
+  if (page === "world") {
+    const region = getAetherRegion(params.get("region"));
+    if (region) view.region = region.key;
+  }
   if (page === "players") {
     const peopleFilter = params.get("show");
     if (["players", "characters", "all"].includes(peopleFilter))
@@ -102,8 +108,10 @@ export function workspaceView(hash, gm) {
       if (value && /^[a-zA-Z0-9_-]{1,64}$/.test(value))
         questEditor[field] = value;
     }
+    const template = getAetherRegion(params.get("template"));
+    if (template) questEditor.template = template.key;
     const returnPage = params.get("from");
-    if (["home", "players"].includes(returnPage))
+    if (["home", "players", "world"].includes(returnPage))
       questEditor.returnPage = returnPage;
     view.questEditor = questEditor;
   }
@@ -122,11 +130,10 @@ export function workspaceHash(page, view = {}) {
     if (status) params.set("status", status);
     if (view.questScope === "all") params.set("scope", "all");
   }
-  if (
-    page === "players" &&
-    view.peopleFilter &&
-    view.peopleFilter !== "players"
-  ) {
+  if (page === "world" && getAetherRegion(view.region)) {
+    params.set("region", view.region);
+  }
+  if (page === "players" && view.peopleFilter) {
     params.set("show", view.peopleFilter);
   }
   if (page === "questEditor") {
@@ -134,6 +141,8 @@ export function workspaceHash(page, view = {}) {
     for (const [key, field] of Object.entries(editorParams)) {
       if (editor?.[field]) params.set(key, editor[field]);
     }
+    if (getAetherRegion(editor?.template))
+      params.set("template", editor.template);
     if (editor?.returnPage && editor.returnPage !== "quests")
       params.set("from", editor.returnPage);
   }

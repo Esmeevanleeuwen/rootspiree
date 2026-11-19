@@ -1,6 +1,6 @@
 .quest-editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(275px, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(17rem, 1fr);
   grid-template-areas:
     "fields aside"
     "footer aside";
@@ -15,7 +15,7 @@
   min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: var(--gradient-card);
+  background: var(--color-surface);
   color: var(--color-text);
 }
 
@@ -30,6 +30,10 @@
 
 .quest-editor-fields > .field {
   margin-block-end: var(--space-4);
+}
+
+.quest-editor-fields textarea {
+  resize: vertical;
 }
 
 .quest-editor-fields textarea::placeholder {
@@ -57,7 +61,7 @@
 .quest-editor-score {
   float: inline-end;
   font-weight: 650;
-  color: var(--color-accent);
+  color: var(--color-positive);
   font-variant-numeric: tabular-nums;
 }
 
@@ -100,9 +104,11 @@
 .quest-editor-goal-detail {
   display: grid;
   gap: var(--space-1);
-  border-inline-start: 2px solid var(--color-accent);
+  border-inline-start: 2px solid var(--color-positive);
   margin-block-start: var(--space-3);
-  padding-inline-start: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-raised);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   font-size: var(--font-size-sm, 0.875rem);
 }
 
@@ -138,7 +144,7 @@
 }
 
 .quest-editor-preview {
-  background: var(--gradient-hero);
+  background: var(--color-surface-raised);
 }
 
 .quest-editor-preview h2 {
@@ -147,7 +153,7 @@
   gap: var(--space-2);
   margin-block-end: var(--space-3);
   color: var(--color-text);
-  font: 700 var(--font-size-sm, 0.875rem) var(--font-sans);
+  font: 500 var(--font-size-section) / 1.2 var(--font-display);
 }
 
 .quest-editor-preview h2 .ico {
@@ -166,13 +172,14 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
   margin-block-end: var(--space-2);
   min-width: 0;
 }
 
 .quest-editor-preview-header h3 {
-  font: 700 var(--font-size-section) / 1.2 var(--font-display);
+  font: 500 1.125rem / 1.2 var(--font-display);
 }
 
 .quest-editor-preview-header .status {
@@ -195,8 +202,12 @@
 }
 
 .quest-editor-preview-person .avatar .ico {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
+}
+
+.quest-editor-preview-person .avatar .ico-illustrated {
+  --icon-glyph-size: 0.875rem;
 }
 
 .quest-editor-footer {
@@ -242,18 +253,11 @@
   width: 16px;
 }
 
-@media (max-width: 930px) {
+@media (max-width: 760px) {
   .quest-editor-layout {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "fields" "aside" "footer";
     grid-template-rows: auto;
-  }
-}
-
-@media (max-width: 415px) {
-  .quest-editor-points .pair {
-    grid-template-columns: 1fr;
-    gap: 0;
   }
 }
 
@@ -283,6 +287,11 @@
 }
 
 @media (max-width: 415px) {
+  .quest-editor-points .pair {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
   .quest-editor-footer .primary {
     width: 100%;
     justify-content: center;
