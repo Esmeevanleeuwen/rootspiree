@@ -152,7 +152,7 @@ export function QuestPage() {
     <div className="quest-workspace">
       <Heading title={t("Opdrachten")}>
         {gm && (
-          <Button icon="plus" onClick={() => navigate("questEditor")}>
+          <Button icon="swords" onClick={() => navigate("questEditor")}>
             {t("Nieuwe opdracht")}
           </Button>
         )}

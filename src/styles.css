@@ -59,6 +59,23 @@ p {
   stroke-linejoin: round;
   flex: none;
 }
+.ico-illustrated {
+  display: inline-grid;
+  place-items: center;
+  font: normal var(--icon-glyph-size) / 1 var(--font-emoji);
+  font-variant-emoji: emoji;
+}
+.brand-mark {
+  display: block;
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--gradient-hero);
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 1.65;
+  stroke-linejoin: round;
+}
 /* Shared page structure */
 .wrap {
   max-width: var(--content-max);
@@ -276,7 +293,7 @@ h2 {
 .avatar {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   display: inline-grid;
   place-items: center;
   flex: none;
@@ -285,6 +302,9 @@ h2 {
 .avatar .ico {
   width: 21px;
   height: 21px;
+}
+.avatar .ico-illustrated {
+  --icon-glyph-size: 1.1rem;
 }
 .fern {
   background: var(--color-positive-muted);
@@ -538,6 +558,9 @@ textarea {
 .bigavatar .ico {
   width: 31px;
   height: 31px;
+}
+.bigavatar .ico-illustrated {
+  --icon-glyph-size: 1.55rem;
 }
 .detailbox {
   background: var(--color-field);

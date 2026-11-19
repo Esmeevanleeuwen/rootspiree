@@ -1,3 +1,56 @@
+export const illustratedIcons = {
+  map: "🗺️",
+  shield: "🛡️",
+  swords: "⚔️",
+  firelight: "🔥",
+  royal: "👑",
+  lightning: "⚡",
+  trophy: "🏆",
+  earth: "🌍",
+  scroll: "📜",
+  lantern: "🏮",
+  telescope: "🔭",
+  sunflower: "🌻",
+  fox: "🦊",
+  owl: "🦉",
+  moonlight: "🌙",
+  leaf: "🌿",
+  wave: "🌊",
+};
+
+const houseIcons = {
+  nacht: "telescope",
+  koper: "lantern",
+  riet: "leaf",
+  keer: "wave",
+};
+const avatarIcons = {
+  fern: "leaf",
+  sun: "sunflower",
+  moon: "moonlight",
+  tide: "wave",
+};
+const playerEmblems = ["sunflower", "fox", "owl", "leaf"];
+
+export function houseIcon(key) {
+  return Object.hasOwn(houseIcons, key) ? houseIcons[key] : "compass";
+}
+
+export function avatarIcon(player) {
+  if (player.registered && player.av === "fern" && player.id) {
+    // Registered players share the same default avatar in the API.
+    const index = Array.from(player.id).reduce(
+      (sum, character) =>
+        (sum * 31 + character.codePointAt(0)) % playerEmblems.length,
+      0,
+    );
+    return playerEmblems[index];
+  }
+  return Object.hasOwn(avatarIcons, player.av)
+    ? avatarIcons[player.av]
+    : "shield";
+}
+
 export const paths = {
   globe:
     "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zM3 12h18M12 3c2 2.5 3 5.5 3 9s-1 6.5-3 9c-2-2.5-3-5.5-3-9s1-6.5 3-9z",

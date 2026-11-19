@@ -35,17 +35,8 @@
 
 .entry-brand svg {
   width: 2rem;
-  height: 2.375rem;
+  height: 2rem;
   flex: none;
-}
-
-.entry-brand svg > path {
-  fill: var(--color-surface-hover);
-  stroke: var(--color-border);
-}
-
-.entry-brand svg g {
-  stroke: var(--color-accent);
 }
 
 .entry-brand small {

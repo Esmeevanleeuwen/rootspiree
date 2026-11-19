@@ -1,6 +1,7 @@
 import { houses } from "../content.js";
 import { points } from "../game.js";
 import { useI18n } from "../i18n.jsx";
+import { houseIcon } from "../icons.js";
 import { useGame } from "../store.jsx";
 import { QuestList } from "./QuestList.jsx";
 import { Avatar, Button, Heading, Icon } from "./ui.jsx";
@@ -95,25 +96,25 @@ export function GameMasterDashboard() {
     {
       label: words.players,
       value: players.length,
-      icon: "people",
+      icon: "shield",
       open: () => navigate("players"),
     },
     {
       label: words.characters,
       value: game.players.length - players.length,
-      icon: "moon",
+      icon: "owl",
       open: () => navigate("players", { peopleFilter: "characters" }),
     },
     {
       label: words.activeQuests,
       value: game.quests.filter((quest) => quest.state === "Open").length,
-      icon: "flag",
+      icon: "swords",
       open: () => openQuests("Open"),
     },
     {
       label: words.toReview,
       value: pending.length,
-      icon: "check",
+      icon: "scroll",
       open: () => openQuests("Ingeleverd"),
     },
   ];
@@ -134,7 +135,7 @@ export function GameMasterDashboard() {
           <p>{words.intro}</p>
           <div className="actions">
             <Button
-              icon="plus"
+              icon="swords"
               onClick={() =>
                 navigate("questEditor", { questEditor: { returnPage: "home" } })
               }
@@ -143,7 +144,7 @@ export function GameMasterDashboard() {
             </Button>
             <Button
               kind="secondary"
-              icon="people"
+              icon="plus"
               onClick={() => setModal({ kind: "addPlayer" })}
             >
               {t("Personage toevoegen")}
@@ -175,7 +176,7 @@ export function GameMasterDashboard() {
         >
           <div className="command-card-head">
             <h2 id="command-review-title">
-              <Icon name="check" />
+              <Icon name="lightning" />
               {words.needsReview}
             </h2>
             <Button kind="textbtn" onClick={() => openQuests("Ingeleverd")}>
@@ -207,7 +208,7 @@ export function GameMasterDashboard() {
         >
           <div className="command-card-head">
             <h2 id="command-leaderboard-title">
-              <Icon name="people" />
+              <Icon name="trophy" />
               {words.leaderboard}
             </h2>
             <Button kind="textbtn" onClick={() => navigate("players")}>
@@ -228,7 +229,7 @@ export function GameMasterDashboard() {
       >
         <div className="command-card-head">
           <h2 id="command-world-title">
-            <Icon name="compass" />
+            <Icon name="earth" />
             {words.world}
           </h2>
           <Button kind="textbtn" onClick={() => navigate("world")}>
@@ -240,7 +241,7 @@ export function GameMasterDashboard() {
             <Button
               key={key}
               kind="secondary"
-              icon={house.icon}
+              icon={houseIcon(key)}
               onClick={() => setModal({ kind: "house", key })}
             >
               {t(house.name)}

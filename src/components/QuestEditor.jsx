@@ -658,7 +658,11 @@ function QuestEditorForm({
               </p>
             )}
             <div className="quest-editor-buttons">
-              <Button type="submit" icon="flag" disabled={pending || conflict}>
+              <Button
+                type="submit"
+                icon="swords"
+                disabled={pending || conflict}
+              >
                 {operation === "assigning"
                   ? words.assigning
                   : player

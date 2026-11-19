@@ -1,24 +1,24 @@
 import { useI18n } from "../i18n.jsx";
 import { useId, useLayoutEffect, useRef } from "react";
 import { useGame } from "../store.jsx";
-import { paths } from "../icons.js";
-import { houses } from "../content.js";
+import { avatarIcon, houseIcon, illustratedIcons, paths } from "../icons.js";
 
 export function BrandMark() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 42 48">
-      <path
-        fill="var(--color-surface-raised)"
-        d="M21 1 40 12v24L21 47 2 36V12z"
-      />
-      <g fill="none" stroke="var(--color-accent)" strokeWidth="1.4">
-        <path d="m21 7 13 8v17l-13 8-13-8V15z" />
-        <path d="m10 30 8-14 5 9 3-5 7 12M16 32l5-9 5 9" />
-      </g>
+    <svg className="brand-mark" aria-hidden="true" viewBox="0 0 42 42">
+      <path d="M21 11c1.8 5.3 4.7 8.2 10 10-5.3 1.8-8.2 4.7-10 10-1.8-5.3-4.7-8.2-10-10 5.3-1.8 8.2-4.7 10-10Z" />
+      <circle cx="21" cy="21" r="1.6" />
     </svg>
   );
 }
 export function Icon({ name }) {
+  if (Object.hasOwn(illustratedIcons, name)) {
+    return (
+      <span className="ico ico-illustrated" aria-hidden="true">
+        {illustratedIcons[name]}
+      </span>
+    );
+  }
   return (
     <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">
       <path d={paths[name]} />
@@ -62,14 +62,14 @@ export function Section({ title, children }) {
 export function Avatar({ player, large = false }) {
   return (
     <span className={"avatar " + player.av + (large ? " bigavatar" : "")}>
-      <Icon name={player.av} />
+      <Icon name={avatarIcon(player)} />
     </span>
   );
 }
 export function Stamp({ house }) {
   return (
     <span className="sigil" aria-hidden="true">
-      <Icon name={houses[house].icon} />
+      <Icon name={houseIcon(house)} />
     </span>
   );
 }
@@ -85,7 +85,7 @@ export function Plate({
     <section className={"plate plate-" + house + (large ? " opening" : "")}>
       <div className="platecopy">
         <span className="tag">
-          <Icon name={houses[house]?.icon || "compass"} />
+          <Icon name={houseIcon(house)} />
           {label}
         </span>
         <h1>{title}</h1>

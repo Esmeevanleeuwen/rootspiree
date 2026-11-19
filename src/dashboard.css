@@ -121,6 +121,7 @@
 .command-stat .ico {
   width: 1rem;
   height: 1rem;
+  --icon-glyph-size: 1rem;
 }
 
 .command-stat strong {
@@ -166,6 +167,7 @@
   width: 1.05rem;
   height: 1.05rem;
   color: var(--color-accent);
+  --icon-glyph-size: 1.05rem;
 }
 
 .command-card-head .textbtn {
@@ -292,6 +294,7 @@
   width: 0.95rem;
   height: 0.95rem;
   color: var(--color-positive);
+  --icon-glyph-size: 0.95rem;
 }
 
 @media (max-width: 720px) {

@@ -32,7 +32,7 @@ export function QuestList({ items }) {
         onClick={() => setModal({ kind: "quest", id: q.id })}
       >
         <span className={"tile " + q.style}>
-          <Icon name={q.icon} />
+          <Icon name={q.icon === "flag" ? "swords" : q.icon} />
         </span>
         <span className="body">
           <strong>{questText(t, q, "name")}</strong>

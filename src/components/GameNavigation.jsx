@@ -19,14 +19,14 @@ export function GameNavigation({ gm, page, navigate, words }) {
   const links = [
     [
       "home",
-      "compass",
+      gm ? "home" : "compass",
       gm ? words.home : words.journey,
       gm ? words.homeShort : words.journey,
     ],
-    ["world", "globe", words.world, words.worldShort],
-    ["players", "people", gm ? words.people : words.players],
-    ["quests", "flag", words.quests],
-    ["feed", "fire", words.feed],
+    ["world", "map", words.world, words.worldShort],
+    ["players", "shield", gm ? words.people : words.players],
+    ["quests", "swords", words.quests],
+    ["feed", "firelight", words.feed],
     ["settings", "settings", words.settings],
   ];
   return (
@@ -54,7 +54,7 @@ export function GameNavigation({ gm, page, navigate, words }) {
       {gm && (
         <section className="app-admin-card">
           <h2>
-            <Icon name="crown" />
+            <Icon name="royal" />
             {words.gameMaster}
           </h2>
           <p>{words.gameMasterHelp}</p>
@@ -130,7 +130,7 @@ export function GameTopBar({
           data-account-page={accountPage || undefined}
         >
           <span className="app-initial" aria-hidden="true">
-            {initial}
+            {gm ? <Icon name="royal" /> : initial}
           </span>
           <span className="app-account-name">{displayName}</span>
           <span className="app-account-chevron">
