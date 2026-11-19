@@ -19,6 +19,7 @@ const personalAnswerCopy = {
     job: "Work or study",
     goals: "Life goals",
     interests: "Interests",
+    fullResult: "Read my full result",
   },
   nl: {
     heading: "Persoonlijke antwoorden",
@@ -27,6 +28,7 @@ const personalAnswerCopy = {
     job: "Werk of studie",
     goals: "Levensdoelen",
     interests: "Interesses",
+    fullResult: "Lees mijn volledige uitslag",
   },
 };
 const answerFields = ["hobbies", "job", "goals", "interests"];
@@ -152,15 +154,22 @@ export function Profile({ personalAnswers }) {
         >
           <div className="player-section-heading">
             <h2 id="profile-quiz">{t("Mijn persoonlijkheidstest")}</h2>
-            <Button
-              icon="pen"
-              kind={j.typeScores ? "textbtn" : "primary"}
-              onClick={startTest}
-            >
-              {j.typeScores
-                ? t("Test opnieuw doen")
-                : t("Start de persoonlijkheidstest")}
-            </Button>
+            <div className="actions">
+              {j.typeScores && (
+                <Button kind="secondary" onClick={() => navigate("quizResult")}>
+                  {copy.fullResult}
+                </Button>
+              )}
+              <Button
+                icon="pen"
+                kind={j.typeScores ? "textbtn" : "primary"}
+                onClick={startTest}
+              >
+                {j.typeScores
+                  ? t("Test opnieuw doen")
+                  : t("Start de persoonlijkheidstest")}
+              </Button>
+            </div>
           </div>
           {j.typeScores ? (
             <Results scores={j.typeScores} />

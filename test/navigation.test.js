@@ -23,6 +23,44 @@ test("workspace destinations survive login and setup redirects", () => {
   );
 });
 
+test("finished onboarding opens the result before the original destination", () => {
+  const world = workspaceHash("world", { region: "shadowwood" });
+  const setup = screenHash("onboard", screenHash("register", world));
+  const result = screenHash("game", setup, { showQuizResult: true });
+  assert.equal(screenForHash(result), "game");
+  const view = workspaceView(result, false);
+  assert.deepEqual(view, { page: "quizResult", quizNext: world });
+  assert.equal(workspaceHash(view.page, view), result);
+  assert.equal(screenHash("game", screenHash("auth", result)), result);
+  assert.equal(
+    screenHash("game", screenHash("onboard", result), { showQuizResult: true }),
+    result,
+  );
+  assert.deepEqual(workspaceView(result, true), { page: "home" });
+  assert.equal(
+    screenHash("game", "#/setup", { showQuizResult: true }),
+    workspaceHash("quizResult"),
+  );
+});
+
+test("results continuation only accepts valid destinations for a player", () => {
+  for (const next of [
+    "https://example.invalid",
+    "#/play/people/accounts",
+    "#/play/quests/edit",
+    "#/play/profile/quiz",
+    "#/play/profile/result",
+    "#/play/unknown",
+  ]) {
+    const raw = "#/play/profile/result?" + new URLSearchParams({ next });
+    assert.deepEqual(workspaceView(raw, false), { page: "quizResult" });
+    assert.equal(
+      workspaceHash("quizResult", { quizNext: next }),
+      "#/play/profile/result",
+    );
+  }
+});
+
 test("quest editor URLs restore the same draft context", () => {
   const questEditor = {
     draftId: "draft_10",

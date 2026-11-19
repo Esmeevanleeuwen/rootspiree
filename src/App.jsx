@@ -32,7 +32,7 @@ export default function App() {
   const [attempt, setAttempt] = useState(0);
   const words = workspaceCopy[language];
   function go(screen, options) {
-    const nextHash = screenHash(screen, window.location.hash);
+    const nextHash = screenHash(screen, window.location.hash, options);
     writeHash(nextHash, options);
     setHash(nextHash);
   }
@@ -88,9 +88,15 @@ export default function App() {
     if (account) screen = account.onboardingComplete ? "game" : "onboard";
     else if (route !== "register") screen = "auth";
   }
+  const showQuizResult =
+    route === "onboard" &&
+    screen === "game" &&
+    account?.role === "player" &&
+    Array.isArray(account.typeScores);
   useEffect(() => {
-    if (status === "ready" && route !== screen) go(screen, { replace: true });
-  }, [status, route, screen]);
+    if (status === "ready" && route !== screen)
+      go(screen, { replace: true, showQuizResult });
+  }, [status, route, screen, showQuizResult]);
 
   if (status !== "ready" && screen !== "landing")
     return (

@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { agreement, quizScoreLimit, statements } from "../src/content.js";
 import { addedStatements } from "../src/personality-questions.js";
 import {
+  describePersonality,
+  personalityProfiles,
+  profileCodes,
+} from "../src/personality-reports.js";
+import {
   houseCandidates,
   initialGame,
   points,
@@ -72,6 +77,26 @@ test("vertrouwen krijgt een eigen score naast de vier spelvoorkeuren", () => {
   assert.equal(typeCode(scores), "XXXX");
   assert.equal(typeCode([3, -5, -1, 7]), "ENFJ");
   assert.deepEqual(typePreferences(scores), [2, 2, 2, 2]);
+});
+
+test("het persoonlijkheidsrapport toont alle types en bewaart gemengde uitslagen", () => {
+  assert.equal(profileCodes.length, 16);
+  assert.equal(new Set(profileCodes).size, 16);
+  for (const code of profileCodes) {
+    for (const language of ["en", "nl"]) {
+      assert.ok(personalityProfiles[code][language].name);
+      assert.ok(personalityProfiles[code][language].introduction);
+    }
+  }
+  const intj = [-4, -6, 7, 2];
+  assert.equal(describePersonality(intj).displayCode, "INTJ");
+  assert.equal(describePersonality([...intj, 5]).displayCode, "INTJ-A");
+  assert.equal(describePersonality([...intj, -5]).displayCode, "INTJ-T");
+  assert.equal(describePersonality([...intj, 0]).displayCode, "INTJ");
+  const blended = describePersonality([-4, -6, 0, 2, -5]);
+  assert.equal(blended.displayCode, "INXJ");
+  assert.deepEqual(blended.matches, ["INTJ", "INFJ"]);
+  assert.deepEqual(describePersonality([0, 0, 0, 0, 0]).matches, profileCodes);
 });
 
 test("registratie maakt één zelfstandig profiel en controleert een dubbele naam", () => {

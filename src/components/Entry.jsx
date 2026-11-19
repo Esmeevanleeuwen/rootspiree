@@ -560,7 +560,7 @@ function Onboarding({ account, language, strings, onAccount, go }) {
       if (path === "/onboarding") {
         writeEntryDraft("quiz", updated.id, null);
         writeEntryDraft("profile", updated.id, null);
-        go("game");
+        go("game", { replace: true, showQuizResult: true });
       } else {
         writeEntryDraft("profile", updated.id, null);
         setProfile(updated.profile);

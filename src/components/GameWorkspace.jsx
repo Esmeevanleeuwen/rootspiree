@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import { statements } from "../content.js";
 import { useI18n } from "../i18n.jsx";
+import { workspaceView } from "../navigation.js";
 import { useGame } from "../store.jsx";
 import { workspaceCopy } from "../workspace-copy.js";
 import {
@@ -14,6 +15,7 @@ import {
 import { LanguageSelector, QuizForm } from "./Entry.jsx";
 import { GameTopBar } from "./GameNavigation.jsx";
 import { Journey, JourneyDialog } from "./Journey.jsx";
+import { PersonalityResult } from "./PersonalityResult.jsx";
 import { BioDialog, Profile } from "./Profile.jsx";
 import { QuestEditor } from "./QuestEditor.jsx";
 import { WorldGuide } from "./WorldGuide.jsx";
@@ -99,7 +101,7 @@ function Retake({ words, language }) {
     setError("");
     setBusy(true);
     const result = await retake(answers);
-    if (result) navigate("profile", {}, { replace: true });
+    if (result) navigate("quizResult", {}, { replace: true });
     else {
       setError(words.error);
       setBusy(false);
@@ -242,6 +244,9 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
   const { page } = view;
   const ready = Boolean(game && player);
   const j = player?.journey;
+  const resultScores = j?.typeScores ?? account.typeScores;
+  const hasResult = Array.isArray(resultScores);
+  const pageReady = ready || (page === "quizResult" && hasResult);
   const step =
     page === "home" && !gm && j
       ? [j.stage, j.index, j.letterIndex].join("/")
@@ -252,7 +257,7 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
     window.scrollTo(0, 0);
     title.tabIndex = -1;
     title.focus({ preventScroll: true });
-  }, [page, step, ready]);
+  }, [page, step, pageReady]);
 
   async function retryWorkspace() {
     setRetrying(true);
@@ -261,6 +266,11 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
     } finally {
       setRetrying(false);
     }
+  }
+
+  function continueAfterQuiz() {
+    const destination = workspaceView(view.quizNext || "#/play", gm);
+    navigate(destination.page, destination);
   }
 
   const screens = {
@@ -290,6 +300,21 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
     ) : null,
     profile: gm ? null : <Profile personalAnswers={account.profile} />,
     test: !gm ? <Retake words={words} language={language} /> : null,
+    quizResult: hasResult ? (
+      <PersonalityResult
+        scores={resultScores}
+        onContinue={continueAfterQuiz}
+        onProfile={() => navigate("profile")}
+        onRetake={() => navigate("test")}
+      />
+    ) : (
+      <>
+        <Heading title={t("Mijn persoonlijkheidstest")} />
+        <Button onClick={() => navigate("test")}>
+          {t("Start de persoonlijkheidstest")}
+        </Button>
+      </>
+    ),
     guide: (
       <>
         <Heading title={words.about} />
@@ -344,7 +369,7 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
             </div>
           )}
           <div key={page}>
-            {ready ? (
+            {pageReady ? (
               screens[page] || screens.home
             ) : (
               <WorkspaceLoading

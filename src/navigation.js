@@ -17,6 +17,7 @@ const gamePaths = {
   feed: "/play/campfire",
   profile: "/play/profile",
   test: "/play/profile/quiz",
+  quizResult: "/play/profile/result",
   settings: "/play/settings",
   guide: "/play/guide",
 };
@@ -59,7 +60,11 @@ export function screenForHash(hash) {
   return Object.hasOwn(entryScreens, path) ? entryScreens[path] : "landing";
 }
 
-export function screenHash(screen, currentHash) {
+export function screenHash(
+  screen,
+  currentHash,
+  { showQuizResult = false } = {},
+) {
   if (screen === "landing") return "";
   const currentScreen = screenForHash(currentHash);
   const next =
@@ -68,7 +73,17 @@ export function screenHash(screen, currentHash) {
       : parseHash(currentHash).params.get("next");
   const workspace =
     next?.startsWith("#/play") && screenForHash(next) === "game" ? next : null;
-  if (screen === "game") return workspace || joinHash(gamePaths.home);
+  if (screen === "game") {
+    if (showQuizResult) {
+      const target = workspace && parseHash(workspace);
+      const quizNext =
+        target?.path === gamePaths.quizResult
+          ? target.params.get("next")
+          : workspace;
+      return workspaceHash("quizResult", { quizNext });
+    }
+    return workspace || joinHash(gamePaths.home);
+  }
   return joinHash(
     entryPaths[screen],
     workspace && new URLSearchParams({ next: workspace }),
@@ -80,11 +95,15 @@ export function workspaceView(hash, gm) {
   const page = Object.hasOwn(gamePages, path) ? gamePages[path] : "home";
   if (
     (!gm && ["accounts", "questEditor"].includes(page)) ||
-    (gm && ["profile", "test"].includes(page))
+    (gm && ["profile", "test", "quizResult"].includes(page))
   ) {
     return { page: "home" };
   }
   const view = { page };
+  if (page === "quizResult") {
+    const next = quizDestination(params.get("next"));
+    if (next) view.quizNext = next;
+  }
   if (page === "quests") {
     const filter = params.get("status");
     if (Object.hasOwn(questFilters, filter) && (gm || filter !== "drafts")) {
@@ -118,11 +137,28 @@ export function workspaceView(hash, gm) {
   return view;
 }
 
+function quizDestination(hash) {
+  if (
+    typeof hash !== "string" ||
+    !hash.startsWith("#/play/") ||
+    parseHash(hash).path === gamePaths.quizResult
+  ) {
+    return null;
+  }
+  const destination = workspaceView(hash, false);
+  if (destination.page === "home" || destination.page === "test") return null;
+  return workspaceHash(destination.page, destination);
+}
+
 export function workspaceHash(page, view = {}) {
   const path = Object.hasOwn(gamePaths, page)
     ? gamePaths[page]
     : gamePaths.home;
   const params = new URLSearchParams();
+  if (page === "quizResult") {
+    const next = quizDestination(view.quizNext);
+    if (next) params.set("next", next);
+  }
   if (page === "quests") {
     const status = Object.keys(questFilters).find(
       (key) => questFilters[key] === view.questFilter,
