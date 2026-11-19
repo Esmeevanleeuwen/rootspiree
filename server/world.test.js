@@ -145,9 +145,17 @@ test("only the owner can read private profiles and the GM can read explicitly sh
   });
   assert.equal(alex("admin").email, undefined);
   assert.equal(alex("admin").profile, undefined);
-  db.prepare("UPDATE accounts SET type_scores = ? WHERE id = 'alex'").run(
-    "[-1,-2,3,4]",
+  const updateScores = db.prepare(
+    "UPDATE accounts SET type_scores = ? WHERE id = 'alex'",
   );
+  updateScores.run("[3,1,-4,0,12]");
+  assert.deepEqual(alex("alex").journey.typeScores, [3, 1, -4, 0, 12]);
+  assert.deepEqual(alex("alex").journey.prefs, [2, 2, 2, 2]);
+  updateScores.run("[3,1,-4,0,-5]");
+  assert.deepEqual(alex("alex").journey.prefs, [2, 2, 2, 2]);
+
+  updateScores.run("[-1,-2,3,4,-5]");
+  assert.deepEqual(alex("alex").journey.typeScores, [-1, -2, 3, 4, -5]);
   assert.deepEqual(alex("alex").journey.prefs, [1, 1, 0, 0]);
   const first = request("alex", {
     action: "exercise",

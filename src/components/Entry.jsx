@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { api } from "../api.js";
-import { agreement, statements } from "../content.js";
+import { agreement, originalQuizLength, statements } from "../content.js";
 import { translate } from "../i18n.jsx";
 import { BrandLockup, Button, Field, Icon } from "./ui.jsx";
 import { LandingNavigation, LandingPage } from "./LandingPage.jsx";
@@ -106,8 +106,8 @@ const errors = {
     "Sla de stap ‘Over jou’ op voordat je met de quiz begint.",
   ],
   invalid_answers: [
-    "Answer all sixteen statements before finishing.",
-    "Beantwoord alle zestien stellingen voordat je afrondt.",
+    "Answer every statement before finishing.",
+    "Beantwoord alle stellingen voordat je afrondt.",
   ],
   rate_limited: [
     "Too many attempts. Wait a few minutes and try again.",
@@ -116,7 +116,7 @@ const errors = {
 };
 
 const profileFields = ["hobbies", "job", "goals", "interests"];
-const pageSize = 4;
+const pageSize = 6;
 const pageCount = Math.ceil(statements.length / pageSize);
 
 export function LanguageSelector({ language, setLanguage }) {
@@ -374,7 +374,7 @@ export function QuizForm({
       <p>
         {t("In hoeverre herken je jezelf? De middelste keuze is neutraal.")}
       </p>
-      {statements.slice(start, end).map(([, sentence], offset) => {
+      {statements.slice(start, end).map(([, sentence, english], offset) => {
         const index = start + offset;
         return (
           <fieldset
@@ -389,7 +389,8 @@ export function QuizForm({
             aria-describedby={missing === index ? missingId : undefined}
           >
             <legend>
-              {index + 1}. {t(sentence)}
+              {index + 1}.{" "}
+              {language === "en" && english ? english : t(sentence)}
             </legend>
             <div className="rating">
               {agreement.map((label, value) => (
@@ -495,12 +496,21 @@ function loadQuizDraft(accountId) {
   const draft = readEntryDraft("quiz", accountId);
   if (
     !Array.isArray(draft?.answers) ||
-    draft.answers.length !== statements.length ||
+    ![originalQuizLength, statements.length].includes(draft.answers.length) ||
     draft.answers.some(
       (answer) =>
         answer !== null &&
         (!Number.isInteger(answer) || answer < 0 || answer >= agreement.length),
-    ) ||
+    )
+  )
+    return empty;
+
+  if (draft.answers.length === originalQuizLength) {
+    const answers = empty.answers;
+    answers.splice(0, originalQuizLength, ...draft.answers);
+    return { answers, page: Math.floor(answers.indexOf(null) / pageSize) };
+  }
+  if (
     !Number.isInteger(draft.page) ||
     draft.page < 0 ||
     draft.page >= pageCount ||

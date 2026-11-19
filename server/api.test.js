@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { quizScoreLimit, statements } from "../src/content.js";
 import { openDatabase, provisionAdmin } from "./accounts.js";
 import { createApi } from "./api.js";
 
@@ -93,10 +94,13 @@ test("separate player and admin accounts, ordered onboarding, sessions across re
   assert.ok(!("password_hash" in account));
 
   assert.equal((await req("admin/accounts", { cookie })).status, 403);
+  const answers = statements.map(([letter]) =>
+    letter === "A" ? 6 : letter === "U" ? 0 : 3,
+  );
   let response = await req("onboarding", {
     method: "POST",
     cookie,
-    body: { answers: Array(16).fill(3) },
+    body: { answers },
   });
   assert.equal(response.data.error, "profile_required");
   response = await req("profile", {
@@ -123,16 +127,17 @@ test("separate player and admin accounts, ordered onboarding, sessions across re
   response = await req("onboarding", {
     method: "POST",
     cookie,
-    body: { answers: [3] },
+    body: { answers: Array(16).fill(3) },
   });
   assert.equal(response.data.error, "invalid_answers");
   response = await req("onboarding", {
     method: "POST",
     cookie,
-    body: { answers: Array(16).fill(3) },
+    body: { answers },
   });
   assert.equal(response.data.account.onboardingComplete, true);
-  assert.deepEqual(response.data.account.typeScores, [0, 0, 0, 0]);
+  const scores = [0, 0, 0, 0, quizScoreLimit];
+  assert.deepEqual(response.data.account.typeScores, scores);
 
   const signedIn = await req("login", {
     method: "POST",
@@ -189,6 +194,7 @@ test("separate player and admin accounts, ordered onboarding, sessions across re
   const reopened = await start(t, { dbPath });
   const restored = await reopened.req("session", { cookie: signedIn.cookie });
   assert.deepEqual(restored.data.account.profile, profile);
+  assert.deepEqual(restored.data.account.typeScores, scores);
   assert.equal(
     (await reopened.req("logout", { method: "POST", cookie: signedIn.cookie }))
       .status,

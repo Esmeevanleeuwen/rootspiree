@@ -26,7 +26,7 @@ The template has the local server and database settings. The admin setup asks fo
 
 The admin logs in on the same page as players and can view accounts, assign quests and review submissions. To change the admin password, run setup again with the same email address. Existing sessions for that admin are signed out.
 
-To create a player, choose **Create an account**. Enter a name, email and password, then answer four optional questions about yourself. The existing 16-statement quiz follows. Once the quiz is complete, the house journey begins. The language switch is available in the welcome screens and the game.
+To create a player, choose **Create an account**. Enter a name, email and password, then answer four optional questions about yourself. The 64-statement quiz follows. It gives you a four-letter type and a separate result for how you respond under pressure. Once the quiz is complete, the house journey begins. The language switch is available in the welcome screens and the game.
 
 ## Customize the theme
 

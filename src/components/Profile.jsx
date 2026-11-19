@@ -1,5 +1,11 @@
 import { useI18n } from "../i18n.jsx";
-import { houses, traits } from "../content.js";
+import {
+  houses,
+  quizScoreLimit,
+  quizTraits,
+  statements,
+  traits,
+} from "../content.js";
 import { currentGoal, preference, typeCode } from "../game.js";
 import { useGame } from "../store.jsx";
 import { Avatar, Button, Dialog, Field } from "./ui.jsx";
@@ -27,7 +33,8 @@ const answerFields = ["hobbies", "job", "goals", "interests"];
 
 function Results({ scores }) {
   const { t } = useI18n();
-  const tied = scores.every((s) => s === 0);
+  const typeScores = scores.slice(0, traits.length);
+  const tied = typeScores.every((s) => s === 0);
   return (
     <div className="player-quiz-result">
       <h3>{tied ? t("In evenwicht") : typeCode(scores)}</h3>
@@ -36,11 +43,11 @@ function Results({ scores }) {
           ? t(
               "Bij alle vier de voorkeuren wegen beide kanten even zwaar in je antwoorden.",
             )
-          : scores
+          : typeScores
               .flatMap((s, i) => (s ? [t(traits[i].notes[preference(s)])] : []))
               .join(" ")}
       </p>
-      {!tied && scores.includes(0) && (
+      {!tied && typeScores.includes(0) && (
         <p className="note">
           {t(
             "Een X betekent dat beide kanten even zwaar wegen in je antwoorden.",
@@ -48,7 +55,7 @@ function Results({ scores }) {
         </p>
       )}
       <div className="trait-list">
-        {traits.map((trait, i) => (
+        {quizTraits.slice(0, scores.length).map((trait, i) => (
           <div className="trait" key={trait.letters}>
             <div className="trait-heading">
               <b>{t(trait.title)}</b>
@@ -59,12 +66,15 @@ function Results({ scores }) {
               </span>
             </div>
             <div className="trait-track" aria-hidden="true">
-              <i style={{ left: 50 - (scores[i] / 12) * 50 + "%" }} />
+              <i
+                style={{ left: 50 - (scores[i] / quizScoreLimit) * 50 + "%" }}
+              />
             </div>
             <div className="trait-ends">
               {trait.labels.map((label, n) => (
                 <span key={label}>
-                  {trait.letters[n]} · {t(label)}
+                  {i < traits.length && trait.letters[n] + " · "}
+                  {t(label)}
                 </span>
               ))}
             </div>
@@ -155,7 +165,11 @@ export function Profile({ personalAnswers }) {
           {j.typeScores ? (
             <Results scores={j.typeScores} />
           ) : (
-            <p>{t("Ontdek je voorkeuren met zestien korte stellingen.")}</p>
+            <p>
+              {t("Ontdek je voorkeuren met {count} korte stellingen.", {
+                count: statements.length,
+              })}
+            </p>
           )}
           <p className="player-muted player-quiz-note">
             {t(

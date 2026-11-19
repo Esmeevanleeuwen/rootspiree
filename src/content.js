@@ -1,3 +1,5 @@
+import { addedStatements } from "./personality-questions.js";
+
 export const houses = {
   nacht: {
     name: "Nachtglas",
@@ -296,7 +298,18 @@ export const traits = [
   },
 ];
 
-export const statements = [
+export const quizTraits = [
+  ...traits,
+  {
+    letters: "AU",
+    labels: ["Zelfverzekerd", "Sneller bezorgd"],
+    title: "Hoe reageer je onder druk?",
+  },
+];
+
+export const quizScoreLimit = 12;
+
+const originalStatements = [
   ["E", "Na een middag alleen zoek ik graag gezelschap op."],
   ["S", "Als ik iets nieuws leer, wil ik eerst een uitgewerkt voorbeeld zien."],
   [
@@ -341,6 +354,9 @@ export const statements = [
     "Als ik aan iets werk, laat ik de volgorde graag afhangen van wat ik onderweg ontdek.",
   ],
 ];
+
+export const originalQuizLength = originalStatements.length;
+export const statements = [...originalStatements, ...addedStatements];
 
 export const agreement = [
   "Helemaal oneens",

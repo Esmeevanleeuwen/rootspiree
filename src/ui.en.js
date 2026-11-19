@@ -197,8 +197,8 @@ export const uiEnglish = {
   "Een X betekent dat beide kanten even zwaar wegen in je antwoorden.":
     "An X means your answers were equally balanced between the two sides.",
   "Hoe speel jij het liefst?": "How do you like to play?",
-  "Ontdek je voorkeuren met zestien korte stellingen.":
-    "Discover your preferences through sixteen short statements.",
+  "Ontdek je voorkeuren met {count} korte stellingen.":
+    "Discover your preferences through {count} short statements.",
   "Eigen speltest, geïnspireerd op MBTI. De uitslag beschrijft je antwoorden op dit moment.":
     "This game quiz is inspired by MBTI. The result reflects how you answered today.",
   "Over mij bewerken": "Edit about me",

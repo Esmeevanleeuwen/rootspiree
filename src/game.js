@@ -1,8 +1,11 @@
 import {
+  agreement,
   axes,
   goalKinds,
   houses,
   letters,
+  quizScoreLimit,
+  quizTraits,
   statements,
   traits,
 } from "./content.js";
@@ -55,7 +58,7 @@ export function registerPlayer(game, name, bio, scores, id) {
   const journey = {
     ...emptyJourney(),
     typeScores: scores,
-    prefs: scores.map(preference),
+    prefs: typePreferences(scores),
   };
   game.players.push({
     id,
@@ -71,26 +74,41 @@ export function registerPlayer(game, name, bio, scores, id) {
 
 export function scoreTest(answers) {
   if (
+    !Array.isArray(answers) ||
     answers.length !== statements.length ||
     statements.some(
       (_, i) =>
-        !Number.isInteger(answers[i]) || answers[i] < 0 || answers[i] > 6,
+        !Number.isInteger(answers[i]) ||
+        answers[i] < 0 ||
+        answers[i] >= agreement.length,
     )
   ) {
     throw new Error("Beantwoord alle stellingen.");
   }
-  return traits.map(({ letters: pair }) =>
-    statements.reduce((sum, [letter], i) => {
-      if (!pair.includes(letter)) return sum;
-      return sum + (letter === pair[0] ? 1 : -1) * (answers[i] - 3);
-    }, 0),
-  );
+  return quizTraits.map(({ letters: pair }) => {
+    const totals = [0, 0];
+    const counts = [0, 0];
+    for (const [index, [letter]] of statements.entries()) {
+      const side = pair.indexOf(letter);
+      if (side === -1) continue;
+      totals[side] += answers[index];
+      counts[side]++;
+    }
+    const averageDifference = totals[0] / counts[0] - totals[1] / counts[1];
+    const normalized =
+      (averageDifference / (agreement.length - 1)) * quizScoreLimit;
+    return Math.round(normalized * 100) / 100;
+  });
 }
 
 export const preference = (score) => (score === 0 ? 2 : Number(score < 0));
+export const typePreferences = (scores) =>
+  traits.map((_, i) => preference(scores[i]));
 export const typeCode = (scores) =>
-  scores
-    .map((s, i) => (s === 0 ? "X" : traits[i].letters[preference(s)]))
+  traits
+    .map(({ letters: pair }, i) =>
+      scores[i] === 0 ? "X" : pair[preference(scores[i])],
+    )
     .join("");
 export const currentGoal = (journey) =>
   journey.goals.find((g) => g.id === journey.activeGoal);

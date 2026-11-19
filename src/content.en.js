@@ -295,6 +295,9 @@ export const contentEnglish = {
   "Je maakt graag vooraf een plan.": "You like to make a plan in advance.",
   "Je houdt graag ruimte om onderweg te kiezen.":
     "You like to leave room to make choices along the way.",
+  Zelfverzekerd: "Self-assured",
+  "Sneller bezorgd": "More prone to worry",
+  "Hoe reageer je onder druk?": "How do you respond under pressure?",
 
   // Example players, quests, and posts
   Verkenner: "Scout",

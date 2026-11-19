@@ -1,11 +1,11 @@
-import { goalKinds, houses, letters, scenes } from "../src/content.js";
+import { goalKinds, houses, letters, scenes, traits } from "../src/content.js";
 import { examples } from "../src/examples.js";
 import {
   currentGoal,
   emptyJourney,
   exerciseSteps,
   houseCandidates,
-  preference,
+  typePreferences,
 } from "../src/game.js";
 import { ApiError } from "./http.js";
 
@@ -225,11 +225,12 @@ function ownJourney(row, typeScores) {
     ...JSON.parse(row?.journey ?? "null"),
     typeScores,
   };
-  if (
-    row?.type_scores !== JSON.stringify(typeScores) ||
-    journey.prefs === null
-  ) {
-    journey.prefs = typeScores?.map(preference) ?? null;
+  const previousScores = JSON.parse(row?.type_scores ?? "null");
+  const typeChanged = traits.some(
+    (_, i) => previousScores?.[i] !== typeScores?.[i],
+  );
+  if (typeChanged || journey.prefs === null) {
+    journey.prefs = typeScores ? typePreferences(typeScores) : null;
   }
   return journey;
 }

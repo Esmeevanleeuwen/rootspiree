@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { statements } from "../src/content.js";
+import { agreement, quizScoreLimit, statements } from "../src/content.js";
 import {
   houseCandidates,
   initialGame,
@@ -8,6 +8,7 @@ import {
   registerPlayer,
   scoreTest,
   typeCode,
+  typePreferences,
 } from "../src/game.js";
 
 test("alle zestien typen en neutrale uitkomsten worden correct berekend", () => {
@@ -16,17 +17,41 @@ test("alle zestien typen en neutrale uitkomsten worden correct berekend", () => 
       for (const t of "TF")
         for (const j of "JP") {
           const type = e + s + t + j;
-          assert.equal(
-            typeCode(
-              scoreTest(
-                statements.map(([letter]) => (type.includes(letter) ? 6 : 0)),
-              ),
-            ),
-            type,
+          const scores = scoreTest(
+            statements.map(([letter]) => (type.includes(letter) ? 6 : 0)),
+          );
+          assert.equal(typeCode(scores), type);
+          assert.ok(
+            scores.slice(0, 4).every((s) => Math.abs(s) === quizScoreLimit),
           );
         }
-  assert.equal(typeCode(scoreTest(Array(16).fill(3))), "XXXX");
-  assert.throws(() => scoreTest(Array(15).fill(1)));
+  const neutral = statements.map(() => 3);
+  assert.equal(typeCode(scoreTest(neutral)), "XXXX");
+  assert.throws(() => scoreTest(neutral.slice(0, -1)));
+});
+
+test("overal hetzelfde antwoord blijft neutraal ondanks ongelijke aantallen stellingen", () => {
+  for (const rating of agreement.keys()) {
+    assert.deepEqual(scoreTest(statements.map(() => rating)), [0, 0, 0, 0, 0]);
+  }
+});
+
+test("vertrouwen krijgt een eigen score naast de vier spelvoorkeuren", () => {
+  const answers = statements.map(([letter]) =>
+    letter === "A" ? 6 : letter === "U" ? 0 : 3,
+  );
+  const scores = scoreTest(answers);
+  assert.deepEqual(scores, [0, 0, 0, 0, quizScoreLimit]);
+  assert.deepEqual(scoreTest(answers.map((answer) => 6 - answer)), [
+    0,
+    0,
+    0,
+    0,
+    -quizScoreLimit,
+  ]);
+  assert.equal(typeCode(scores), "XXXX");
+  assert.equal(typeCode([3, -5, -1, 7]), "ENFJ");
+  assert.deepEqual(typePreferences(scores), [2, 2, 2, 2]);
 });
 
 test("registratie maakt één zelfstandig profiel en controleert een dubbele naam", () => {
