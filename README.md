@@ -50,6 +50,16 @@ The Node server serves the React build and the API on the same origin. It listen
 
 SQLite stores accounts, sessions, profiles and gameplay in `data/rootspiree.sqlite` by default. Set `DATA_PATH` to use a persistent location and use the same path for the server and admin setup. For unattended admin setup, provide `ADMIN_EMAIL` and `ADMIN_PASSWORD` through the environment. `ADMIN_NAME` is optional.
 
+## Deploy to Vercel
+
+Import this repository as a Vite project. Vercel builds the frontend from `main` and runs the handlers under `api/`. Use Node.js 24.x or a newer Vercel-supported version.
+
+1. Create a **private** Vercel Blob store and connect it to the project for Production. Vercel provides `BLOB_READ_WRITE_TOKEN` to the API. Use a separate store for Preview if you enable its backend.
+2. Set the Production environment variables `ADMIN_EMAIL` and `ADMIN_PASSWORD` if you want a first Game Master account. Use a unique password of at least 12 characters. `ADMIN_NAME` is optional and defaults to Game Master.
+3. Redeploy. Open the game and log in once with the Game Master credentials to initialize the account. Then remove the bootstrap variables and redeploy again.
+
+Vercel uses a separate world from the local SQLite file. Its API saves each committed SQLite snapshot in the private store using conditional writes. This setup is intended for a small game. Each active player refreshes the world periodically, so use Vercel's storage metrics to track usage.
+
 The four signup answers and quiz results are visible on the player's own profile. The player's bio is public within the game. A player can opt to share an individual quest goal with the Game Master. Original demo profiles in browser storage are separate from server accounts. Email is used as a login identifier. This release has no email verification or password-reset flow.
 
 Run `npm test` for the game and account tests.
