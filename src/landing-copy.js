@@ -3,7 +3,7 @@ export const landingCopy = {
     heroTitle: "Practice what",
     heroAccent: "matters to you.",
     heroDescription:
-      "Turn a personal goal into small real-world quests. Try something new, tell your Game Master how it went, and earn points as you play.",
+      "Turn a personal goal into small real-life quests. Try something new and get feedback from your Game Master.",
     start: "Start playing",
     how: "How it works",
     exampleNav: "See a quest",
@@ -32,7 +32,6 @@ export const landingCopy = {
     exampleTitle: "What does a quest look like?",
     exampleIntro:
       "Say you want to become a better listener. Your Game Master can turn that goal into something to try in your next conversation.",
-    questTag: "Listening",
     questTitle: "Ask one more question",
     questAction:
       "In your next conversation, ask one follow-up question before sharing your own experience.",
@@ -53,7 +52,7 @@ export const landingCopy = {
     heroTitle: "Oefen wat",
     heroAccent: "voor jou telt.",
     heroDescription:
-      "Maak van een persoonlijk doel kleine opdrachten voor het echte leven. Probeer iets nieuws, vertel je spelleider hoe het ging en verdien tijdens het spelen punten.",
+      "Maak van een persoonlijk doel kleine opdrachten voor het echte leven. Probeer iets nieuws en krijg feedback van je spelleider.",
     start: "Begin met spelen",
     how: "Hoe het werkt",
     exampleNav: "Bekijk een opdracht",
@@ -82,7 +81,6 @@ export const landingCopy = {
     exampleTitle: "Hoe ziet een opdracht eruit?",
     exampleIntro:
       "Stel dat je beter wilt leren luisteren. Je spelleider kan daar een opdracht van maken die je meteen in je volgende gesprek probeert.",
-    questTag: "Luisteren",
     questTitle: "Stel nog één vraag",
     questAction:
       "Stel in je volgende gesprek één vervolgvraag voor je iets over je eigen ervaring vertelt.",

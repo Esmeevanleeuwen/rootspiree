@@ -2,15 +2,35 @@ import { useI18n } from "../i18n.jsx";
 import { houses, traits } from "../content.js";
 import { currentGoal, preference, typeCode } from "../game.js";
 import { useGame } from "../store.jsx";
-import { Avatar, Button, Dialog, Field, Heading } from "./ui.jsx";
+import { Avatar, Button, Dialog, Field } from "./ui.jsx";
+import "../player-ui.css";
+
+const personalAnswerCopy = {
+  en: {
+    heading: "Personal answers",
+    visibility: "Only you can see these answers.",
+    hobbies: "Hobbies",
+    job: "Work or study",
+    goals: "Life goals",
+    interests: "Interests",
+  },
+  nl: {
+    heading: "Persoonlijke antwoorden",
+    visibility: "Alleen jij kunt deze antwoorden zien.",
+    hobbies: "Hobby’s",
+    job: "Werk of studie",
+    goals: "Levensdoelen",
+    interests: "Interesses",
+  },
+};
+const answerFields = ["hobbies", "job", "goals", "interests"];
 
 function Results({ scores }) {
   const { t } = useI18n();
   const tied = scores.every((s) => s === 0);
   return (
-    <section className="test-result">
-      <span className="eyebrow">{t("Mijn persoonlijkheidstest")}</span>
-      <h2>{tied ? t("In evenwicht") : typeCode(scores)}</h2>
+    <div className="player-quiz-result">
+      <h3>{tied ? t("In evenwicht") : typeCode(scores)}</h3>
       <p>
         {tied
           ? t(
@@ -51,58 +71,35 @@ function Results({ scores }) {
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
-export function Profile() {
-  const { t } = useI18n();
+export function Profile({ personalAnswers }) {
+  const { t, language } = useI18n();
   const { player, startTest, navigate, setModal } = useGame();
   const j = player.journey;
+  const fields = answerFields.filter((field) => personalAnswers?.[field]);
+  const copy = personalAnswerCopy[language];
+
   return (
-    <>
-      <Heading label={t("Spelersprofiel")} title={player.name} />
-      <div className="profile-layout">
-        <div className="profile-primary">
-          {j.typeScores ? (
-            <Results scores={j.typeScores} />
-          ) : (
-            <section className="test-result">
-              <h2>{t("Hoe speel jij het liefst?")}</h2>
-              <p>{t("Ontdek je voorkeuren met zestien korte stellingen.")}</p>
-            </section>
-          )}
-          <div className="actions">
-            {j.typeScores && (
-              <Button icon="compass" onClick={() => navigate("home")}>
-                {j.house ? t("Naar mijn spel") : t("Ontdek mijn huis")}
-              </Button>
-            )}
-            <Button
-              icon="pen"
-              kind={j.typeScores ? "textbtn" : "primary"}
-              onClick={() => startTest()}
-            >
-              {j.typeScores
-                ? t("Test opnieuw doen")
-                : t("Start de persoonlijkheidstest")}
-            </Button>
+    <div className="player-profile">
+      <header className="player-page-heading">
+        <h1>{t("Mijn profiel")}</h1>
+      </header>
+      <section
+        className="player-surface player-profile-card"
+        aria-labelledby="profile-name"
+      >
+        <div className="player-profile-identity">
+          <Avatar player={player} large />
+          <div>
+            <h2 id="profile-name">{player.name}</h2>
+            <p className="player-muted">{t(player.role)}</p>
           </div>
-          <p className="note">
-            {t(
-              "Eigen speltest, geïnspireerd op MBTI. De uitslag beschrijft je antwoorden op dit moment.",
-            )}
-          </p>
         </div>
-        <aside className="guide panel profile-aside">
-          <div className="identity">
-            <Avatar player={player} large />
-            <div>
-              <b>{player.name}</b>
-              <span className="small">{t(player.role)}</span>
-            </div>
-          </div>
-          {player.desc && <p>{player.desc}</p>}
+        {player.desc && <p className="player-bio">{player.desc}</p>}
+        <div className="actions">
           <Button
             icon="pen"
             kind="textbtn"
@@ -110,17 +107,81 @@ export function Profile() {
           >
             {t("Over mij bewerken")}
           </Button>
-          <div className="profile-fact">
-            <span>{t("Mijn huis")}</span>
-            <b>{t(houses[j.house]?.name) || t("Nog te ontdekken")}</b>
+          {j.typeScores && !j.house && (
+            <Button
+              icon="compass"
+              kind="textbtn"
+              onClick={() => navigate("home")}
+            >
+              {t("Ontdek mijn huis")}
+            </Button>
+          )}
+        </div>
+        <dl className="player-profile-facts">
+          <div>
+            <dt>{t("Mijn huis")}</dt>
+            <dd>{t(houses[j.house]?.name) || t("Nog te ontdekken")}</dd>
           </div>
-          <div className="profile-fact">
-            <span>{t("Mijn huidige doel")}</span>
-            <b>{currentGoal(j)?.text || t("Nog te kiezen")}</b>
+          <div>
+            <dt>{t("Mijn huidige doel")}</dt>
+            <dd>{currentGoal(j)?.text || t("Nog te kiezen")}</dd>
           </div>
-        </aside>
+        </dl>
+      </section>
+
+      <div
+        className={
+          fields.length
+            ? "player-profile-sections has-answers"
+            : "player-profile-sections"
+        }
+      >
+        <section
+          className="player-surface player-quiz"
+          aria-labelledby="profile-quiz"
+        >
+          <div className="player-section-heading">
+            <h2 id="profile-quiz">{t("Mijn persoonlijkheidstest")}</h2>
+            <Button
+              icon="pen"
+              kind={j.typeScores ? "textbtn" : "primary"}
+              onClick={startTest}
+            >
+              {j.typeScores
+                ? t("Test opnieuw doen")
+                : t("Start de persoonlijkheidstest")}
+            </Button>
+          </div>
+          {j.typeScores ? (
+            <Results scores={j.typeScores} />
+          ) : (
+            <p>{t("Ontdek je voorkeuren met zestien korte stellingen.")}</p>
+          )}
+          <p className="player-muted player-quiz-note">
+            {t(
+              "Eigen speltest, geïnspireerd op MBTI. De uitslag beschrijft je antwoorden op dit moment.",
+            )}
+          </p>
+        </section>
+        {fields.length > 0 && (
+          <section
+            className="player-surface player-answers"
+            aria-labelledby="personal-answers"
+          >
+            <h2 id="personal-answers">{copy.heading}</h2>
+            <p className="player-muted">{copy.visibility}</p>
+            <dl>
+              {fields.map((field) => (
+                <div key={field}>
+                  <dt>{copy[field]}</dt>
+                  <dd>{personalAnswers[field]}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
       </div>
-    </>
+    </div>
   );
 }
 

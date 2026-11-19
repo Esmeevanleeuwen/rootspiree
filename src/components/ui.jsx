@@ -30,7 +30,7 @@ export function Heading({ label, title, children }) {
   return (
     <header className="heading">
       <div>
-        <span className="eyebrow">{label}</span>
+        {label && <span className="eyebrow">{label}</span>}
         <h1>{title}</h1>
       </div>
       {children}

@@ -1,0 +1,389 @@
+.app-shell {
+  --app-surface: #fffefa;
+  --app-ground: #f8f9f5;
+  --app-border: #e1e6dd;
+  --app-tint: #eef2ea;
+  --app-ink: #20372e;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  background: var(--app-ground);
+}
+.app-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 14px;
+  background: var(--app-surface);
+  border-right: 1px solid var(--app-border);
+}
+.app-wordmark {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #173f33;
+  font: 700 25px/0.92 var(--serif);
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+.app-wordmark svg {
+  width: 32px;
+  height: 36px;
+}
+.app-wordmark small {
+  display: block;
+  margin: 5px 0 0 2px;
+  font: 700 8px/1 var(--sans);
+  letter-spacing: 0.3em;
+}
+.app-sidebar > .app-wordmark {
+  margin: 2px 8px 36px;
+}
+.app-navigation {
+  display: grid;
+  gap: 25px;
+}
+.app-nav-label {
+  margin: 0 0 6px 11px;
+  color: #5c6d63;
+  font-size: 0.75rem;
+  font-weight: 640;
+}
+.app-nav-link {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 11px;
+  border-radius: 7px;
+  color: #445a4d;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 540;
+}
+.app-nav-link + .app-nav-link {
+  margin-top: 3px;
+}
+.app-nav-link .ico {
+  width: 17px;
+  height: 17px;
+}
+.app-nav-link:hover {
+  background: #f4f6ef;
+}
+.app-nav-link[aria-current="page"] {
+  background: var(--app-tint);
+  color: #183f33;
+  font-weight: 740;
+}
+.app-main {
+  min-width: 0;
+}
+.app-top {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 13px;
+  padding: 8px clamp(19px, 3.7vw, 57px);
+  background: var(--app-surface);
+  border-bottom: 1px solid var(--app-border);
+}
+.app-mobile-brand {
+  display: none;
+}
+.app-account {
+  position: relative;
+}
+.app-account-trigger {
+  min-height: 40px;
+  max-width: 260px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 7px;
+  border-radius: 8px;
+  list-style: none;
+  color: var(--app-ink);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.app-account-trigger::-webkit-details-marker {
+  display: none;
+}
+.app-account-trigger:hover,
+.app-account[open] .app-account-trigger {
+  background: var(--app-tint);
+}
+.app-initial {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  background: #e3ebdf;
+  color: #274b3b;
+  font-weight: 750;
+}
+.app-account-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 640;
+}
+.app-account-chevron {
+  display: inline-flex;
+  margin-left: 1px;
+  transform: rotate(90deg);
+  color: var(--muted);
+}
+.app-account-chevron .ico {
+  width: 14px;
+  height: 14px;
+}
+.app-account-panel {
+  position: absolute;
+  inset: calc(100% + 8px) 0 auto auto;
+  width: min(240px, calc(100vw - 32px));
+  display: grid;
+  gap: 3px;
+  padding: 7px;
+  border: 1px solid var(--app-border);
+  border-radius: 11px;
+  background: var(--app-surface);
+  box-shadow: 0 12px 28px #21372a1a;
+}
+.app-account:not([open]) .app-account-panel {
+  display: none;
+}
+.app-account-panel > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 37px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  color: var(--app-ink);
+  font-size: 0.875rem;
+  font-weight: 620;
+  text-align: left;
+}
+.app-account-panel > button:hover {
+  background: var(--app-tint);
+}
+.app-account-panel > button .ico {
+  width: 16px;
+  height: 16px;
+}
+.app-account-options {
+  margin-block: 2px;
+  border-block: 1px solid var(--app-border);
+  padding: 8px;
+}
+.app-account-options p {
+  margin: 0 0 5px;
+  color: #536459;
+  font-size: 0.75rem;
+  font-weight: 620;
+}
+.app-account-options .entry-language button {
+  flex: 1;
+  padding-inline: 5px;
+}
+.app-content.wrap {
+  max-width: 1290px;
+  margin: 0 auto;
+  padding: clamp(25px, 4vw, 46px) clamp(20px, 4vw, 52px) 52px;
+  min-width: 0;
+}
+.app-content .heading {
+  gap: 12px 18px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+.app-content .heading h1 {
+  color: var(--app-ink);
+  font: 700 clamp(1.8rem, 3.9vw, 2.55rem)/1.12 var(--sans);
+  letter-spacing: -0.047em;
+}
+.app-content .sectionhead h2 {
+  color: var(--app-ink);
+  font: 680 clamp(1.12rem, 2vw, 1.4rem)/1.22 var(--sans);
+  letter-spacing: -0.023em;
+}
+.app-content .heading .eyebrow {
+  margin-bottom: 4px;
+}
+.app-content .detailbox[role="alert"] {
+  margin-top: 0;
+}
+.app-people-switch {
+  display: flex;
+  width: fit-content;
+  gap: 3px;
+  margin-bottom: 22px;
+  padding: 3px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-tint);
+}
+.app-people-switch button {
+  min-height: 37px;
+  padding: 6px 15px;
+  border-radius: 5px;
+  color: #4b5c51;
+  font-size: 0.875rem;
+  font-weight: 630;
+}
+.app-people-switch button[aria-current="page"] {
+  color: var(--app-ink);
+  background: var(--app-surface);
+  box-shadow: 0 1px 3px #22372b15;
+}
+.app-accounts.accounts-panel {
+  max-width: 860px;
+  padding: 0;
+  background: var(--app-surface);
+  border-color: var(--app-border);
+  border-radius: 11px;
+}
+.app-accounts .accounts-table th {
+  font-size: 0.8rem;
+  color: #536459;
+}
+.app-accounts .accounts-table :is(th, td) {
+  padding: 12px 16px;
+  overflow-wrap: anywhere;
+}
+.app-accounts .accounts-table tbody th {
+  color: var(--app-ink);
+  font-size: inherit;
+}
+.app-accounts .accounts-table td {
+  color: #445a4d;
+  font-size: 0.875rem;
+}
+.app-accounts .accounts-table td:last-child {
+  white-space: nowrap;
+}
+.app-guide {
+  max-width: 620px;
+}
+.app-guide button {
+  margin-top: 12px;
+}
+
+@media (max-width: 1050px) and (min-width: 771px) {
+  .app-shell {
+    grid-template-columns: 184px minmax(0, 1fr);
+  }
+}
+@media (max-width: 770px) {
+  .app-shell {
+    display: block;
+  }
+  .app-sidebar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 4;
+    height: auto;
+    padding: 4px 6px max(env(safe-area-inset-bottom), 5px);
+    border-top: 1px solid var(--app-border);
+    border-right: 0;
+  }
+  .app-sidebar > .app-wordmark,
+  .app-nav-label {
+    display: none;
+  }
+  .app-navigation {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .app-nav-group {
+    display: contents;
+  }
+  .app-nav-link {
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-height: 48px;
+    padding: 4px 1px;
+    font-size: 0.72rem;
+    text-align: center;
+    line-height: 1.15;
+  }
+  .app-nav-link + .app-nav-link {
+    margin-top: 0;
+  }
+  .app-top {
+    min-height: 57px;
+    padding-inline: 15px;
+    gap: 8px;
+  }
+  .app-mobile-brand {
+    display: block;
+    margin-right: auto;
+  }
+  .app-mobile-brand .app-wordmark {
+    font-size: 22px;
+  }
+  .app-mobile-brand svg {
+    width: 26px;
+    height: 30px;
+  }
+  .app-account-trigger {
+    max-width: min(200px, 54vw);
+  }
+  .app-content.wrap {
+    padding: 23px 16px 86px;
+  }
+  .app-content .heading {
+    margin-bottom: 19px;
+  }
+}
+
+.app-account-trigger:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+.app-account-cell-label {
+  display: none;
+}
+@media (max-width: 500px) {
+  .app-accounts .accounts-table {
+    min-width: 0;
+  }
+  .app-accounts .accounts-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .app-accounts .accounts-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 8px 13px;
+  }
+  .app-accounts .accounts-table tbody :is(th, td) {
+    padding: 3px 0;
+  }
+  .app-accounts .accounts-table tbody th,
+  .app-accounts .accounts-table tbody td:first-of-type {
+    grid-column: 1 / -1;
+  }
+  .app-account-cell-label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+}

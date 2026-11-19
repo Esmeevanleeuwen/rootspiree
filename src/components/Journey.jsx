@@ -10,23 +10,15 @@ import {
   newId,
   prefLabel,
 } from "../game.js";
-import {
-  Button,
-  Dialog,
-  Field,
-  Heading,
-  Icon,
-  Plate,
-  Section,
-  Stamp,
-} from "./ui.jsx";
+import { Button, Dialog, Field, Heading, Icon, Plate, Stamp } from "./ui.jsx";
 import { QuestList } from "./Community.jsx";
+import "../player-ui.css";
 
 function Welcome() {
   const { t } = useI18n();
   const { player, stage, setModal } = useGame();
   return (
-    <>
+    <div className="player-welcome">
       <Plate
         large
         label={t("Aankomst in de Luistervallei")}
@@ -45,9 +37,13 @@ function Welcome() {
           </Button>
         </div>
       </Plate>
-      <div className="minihead voyageHead">
+      <div className="player-welcome-houses">
         <h2>{t("De vier huizen")}</h2>
-        <span className="small">{t("Jouw keuzes wijzen de weg")}</span>
+        <p className="journeyNote">
+          {t(
+            "Vijf keuzes brengen je naar een huis. Daarna geef je je eigen doel een plek in de wereld.",
+          )}
+        </p>
       </div>
       <div className="houseGrid">
         {Object.entries(houses).map(([key, h]) => (
@@ -67,12 +63,7 @@ function Welcome() {
           </button>
         ))}
       </div>
-      <p className="journeyNote">
-        {t(
-          "Vijf keuzes brengen je naar een huis. Daarna geef je je eigen doel een plek in de wereld.",
-        )}
-      </p>
-    </>
+    </div>
   );
 }
 function StoryQuestion({ deep }) {
@@ -477,123 +468,152 @@ function Tune() {
   );
 }
 function Room() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { player, game, navigate, setModal, stage } = useGame(),
     j = player.journey,
     h = houses[j.house],
     g = currentGoal(j);
+  const quests = game.quests
+    .filter((quest) => quest.playerId === player.id)
+    .reverse();
+  const latestQuests = [
+    ...quests.filter((quest) => quest.state === "Open"),
+    ...quests.filter((quest) => quest.state !== "Open"),
+  ].slice(0, 3);
+
   return (
-    <>
-      <Plate
-        house={j.house}
-        label={t("Huis {house} · {name}", {
-          house: t(h.name),
-          name: player.name,
-        })}
-        title={t(h.place)}
-        description={t(h.motto)}
-      >
-        <Button
-          kind="pale"
-          onClick={() => setModal({ kind: "house", key: j.house })}
-        >
-          {t("Bekijk mijn huis")}
-        </Button>
-      </Plate>
-      <div className="cols">
-        <section>
-          <Section title={t("Mijn volgende stap")} />
-          {g ? (
-            <article className="guide panel focusCard">
-              <span className="eyebrow">{t(goalKinds[g.kind].label)}</span>
-              <h2>{g.text}</h2>
-              <p>{g.action}</p>
-              {j.prefs && (
-                <p className="note">
-                  {t(
-                    j.prefs[0] === 2 ? axes[0].blend : axes[0].tips[j.prefs[0]],
-                  )}
-                </p>
-              )}
-              <div className="actions">
-                <Button onClick={() => setModal({ kind: "exercise" })}>
-                  {t("Bekijk mijn oefening")}
-                </Button>
-                <Button kind="textbtn" onClick={() => stage("goals")}>
-                  {t("Mijn doelen")}
-                </Button>
-              </div>
-            </article>
-          ) : (
-            <Button onClick={() => stage("goal", { editGoal: null })}>
-              {t("Stel een doel in")}
-            </Button>
-          )}
-          <Section title={t("Mijn opdrachten")}>
-            <Button kind="textbtn" onClick={() => navigate("quests")}>
-              {t("Alle opdrachten")}
-            </Button>
-          </Section>
-          <QuestList
-            items={game.quests
-              .filter((q) => q.playerId === player.id)
-              .slice(-3)
-              .reverse()}
-          />
-        </section>
-        <section>
-          <Section title={t("Mijn speelstijl")} />
-          <div className="guide panel">
-            {j.prefs ? (
+    <div className="player-room">
+      <header className="player-page-heading">
+        <h1>{t("Mijn veldboek")}</h1>
+      </header>
+      <div className="player-workspace">
+        <div className="player-stack">
+          <section
+            className="player-surface player-next"
+            aria-labelledby="next-step"
+          >
+            <h2 id="next-step">{t("Mijn volgende stap")}</h2>
+            {g ? (
               <>
-                {axes.map((a, i) => (
-                  <div key={a.key} className="prefline">
-                    <span>{t(a.title)}</span>
-                    <b>{t(prefLabel(a, j.prefs[i]))}</b>
-                  </div>
-                ))}
+                <h3>{g.text}</h3>
+                <p>{g.action}</p>
+                {j.prefs && (
+                  <p className="player-muted">
+                    {t(
+                      j.prefs[0] === 2
+                        ? axes[0].blend
+                        : axes[0].tips[j.prefs[0]],
+                    )}
+                  </p>
+                )}
                 <div className="actions">
-                  <Button kind="textbtn" onClick={() => stage("tune")}>
-                    {t("Bijstellen")}
+                  <Button onClick={() => setModal({ kind: "exercise" })}>
+                    {t("Bekijk mijn oefening")}
                   </Button>
-                  <Button kind="textbtn" onClick={() => stage("letterIntro")}>
-                    {j.letterAnswers.length
-                      ? t("Brieven opnieuw lezen")
-                      : t("Ontdek de brieven")}
+                  <Button kind="textbtn" onClick={() => stage("goals")}>
+                    {t("Mijn doelen")}
                   </Button>
                 </div>
               </>
             ) : (
-              <>
-                <h3>{t("De post van morgen")}</h3>
-                <p>
-                  {t(
-                    "Ontdek in acht brieven hoe je het liefst aan een opdracht begint.",
-                  )}
-                </p>
-                <Button kind="textbtn" onClick={() => stage("letterIntro")}>
-                  {t("Open de brievenbus")}
+              <div className="actions">
+                <Button onClick={() => stage("goal", { editGoal: null })}>
+                  {t("Stel een doel in")}
                 </Button>
-              </>
+              </div>
             )}
-          </div>
-          <Section title={t("Mijn huis")} />
-          <div className="panel guide">
-            <div className="identity">
-              <Stamp house={j.house} />
-              <div>
-                <b>{t(h.name)}</b>
-                <span className="small">{t(h.verb)}</span>
+          </section>
+          <section aria-labelledby="room-quests">
+            <div className="player-section-heading">
+              <h2 id="room-quests">{t("Mijn opdrachten")}</h2>
+              <Button kind="textbtn" onClick={() => navigate("quests")}>
+                {language === "nl"
+                  ? "Mijn opdrachten bekijken"
+                  : "View my quests"}
+              </Button>
+            </div>
+            <QuestList items={latestQuests} />
+          </section>
+        </div>
+        <aside className="player-stack">
+          <section
+            className="player-surface player-house"
+            aria-labelledby="room-house"
+          >
+            <div
+              className={"player-house-art tile-" + j.house}
+              aria-hidden="true"
+            />
+            <div className="player-house-content">
+              <div className="player-house-identity">
+                <Stamp house={j.house} />
+                <div>
+                  <h2 id="room-house">{t(h.name)}</h2>
+                  <p className="player-muted">{t(h.place)}</p>
+                </div>
+              </div>
+              <div className="actions">
+                <Button
+                  kind="textbtn"
+                  onClick={() => setModal({ kind: "house", key: j.house })}
+                >
+                  {t("Bekijk mijn huis")}
+                </Button>
+                <Button
+                  kind="textbtn"
+                  onClick={() => setModal({ kind: "retake" })}
+                >
+                  {t("De laagwaterreis herbeleven")}
+                </Button>
               </div>
             </div>
-            <p>{t(h.memento)}</p>
-            <Button kind="textbtn" onClick={() => setModal({ kind: "retake" })}>
-              {t("De laagwaterreis herbeleven")}
-            </Button>
-          </div>
-        </section>
+          </section>
+          <details className="player-surface player-style">
+            <summary>
+              <h2>{t("Mijn speelstijl")}</h2>
+              <Icon name="chev" />
+            </summary>
+            <div className="player-style-content">
+              {j.prefs ? (
+                <>
+                  <dl className="player-style-facts">
+                    {axes.map((a, i) => (
+                      <div key={a.key}>
+                        <dt>{t(a.title)}</dt>
+                        <dd>{t(prefLabel(a, j.prefs[i]))}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <div className="actions">
+                    <Button kind="textbtn" onClick={() => stage("tune")}>
+                      {t("Bijstellen")}
+                    </Button>
+                    <Button kind="textbtn" onClick={() => stage("letterIntro")}>
+                      {j.letterAnswers.length
+                        ? t("Brieven opnieuw lezen")
+                        : t("Ontdek de brieven")}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="player-muted">
+                    {t(
+                      "Ontdek in acht brieven hoe je het liefst aan een opdracht begint.",
+                    )}
+                  </p>
+                  <div className="actions">
+                    <Button kind="textbtn" onClick={() => stage("letterIntro")}>
+                      {t("Open de brievenbus")}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </details>
+        </aside>
       </div>
-    </>
+    </div>
   );
 }
 

@@ -4,8 +4,9 @@ import { houses } from "./content.js";
 import { landingCopy } from "./landing-copy.js";
 import { I18nProvider, useI18n } from "./i18n.jsx";
 import { GameProvider, useGame } from "./store.jsx";
-import { Button, Heading, Icon } from "./components/ui.jsx";
-import { Entry, LanguageSelector, QuizForm } from "./components/Entry.jsx";
+import { Button, Heading } from "./components/ui.jsx";
+import { Entry, QuizForm } from "./components/Entry.jsx";
+import { GameNavigation, GameTopBar } from "./components/GameNavigation.jsx";
 import { BioDialog, Profile } from "./components/Profile.jsx";
 import { Journey, JourneyDialog } from "./components/Journey.jsx";
 import { QuestEditor } from "./components/QuestEditor.jsx";
@@ -16,6 +17,7 @@ import {
   Players,
   QuestPage,
 } from "./components/Community.jsx";
+import "./workspace.css";
 
 const chrome = {
   en: {
@@ -26,6 +28,16 @@ const chrome = {
     nav: "Main navigation",
     home: "Overview",
     quests: "Quests",
+    journey: "Journey",
+    manage: "Manage",
+    play: "Play",
+    community: "Community",
+    people: "People",
+    peopleViews: "People views",
+    directory: "Directory",
+    accountMenu: "Account menu",
+    language: "Language",
+    chapter: "The Listening Valley",
     players: "Players",
     feed: "Campfire",
     profile: "My profile",
@@ -38,7 +50,6 @@ const chrome = {
     status: "Signup",
     complete: "Complete",
     incomplete: "In progress",
-    welcome: "Back to the game",
     retake: "Retake the personality quiz",
     save: "Save my results",
     error: "Something went wrong. Please try again.",
@@ -47,11 +58,6 @@ const chrome = {
     about: "How to play",
     aboutText:
       "Choose a goal to practise in the Listening Valley. The Game Master can assign quests, review your submissions and give you feedback and points. Share what you’re learning around the Campfire.",
-    details: "My personal answers",
-    hobbies: "Hobbies",
-    job: "Work or study",
-    goals: "Life goals",
-    interests: "Interests",
   },
   nl: {
     loading: "Laden…",
@@ -61,6 +67,16 @@ const chrome = {
     nav: "Hoofdnavigatie",
     home: "Overzicht",
     quests: "Opdrachten",
+    journey: "Reis",
+    manage: "Beheer",
+    play: "Spelen",
+    community: "Gemeenschap",
+    people: "Deelnemers",
+    peopleViews: "Deelnemersweergaven",
+    directory: "Lijst",
+    accountMenu: "Accountmenu",
+    language: "Taal",
+    chapter: "De Luistervallei",
     players: "Spelers",
     feed: "Kampvuur",
     profile: "Mijn profiel",
@@ -73,7 +89,6 @@ const chrome = {
     status: "Aanmelding",
     complete: "Afgerond",
     incomplete: "Bezig",
-    welcome: "Terug naar het spel",
     retake: "Doe de persoonlijkheidstest opnieuw",
     save: "Bewaar mijn uitslag",
     error: "Er ging iets mis. Probeer het opnieuw.",
@@ -82,19 +97,8 @@ const chrome = {
     about: "Hoe speel je?",
     aboutText:
       "Kies een doel om aan te werken in de Luistervallei. De spelleider kan opdrachten toewijzen, inzendingen beoordelen en feedback en punten geven. Bij het kampvuur deel je wat je leert.",
-    details: "Mijn persoonlijke antwoorden",
-    hobbies: "Hobby’s",
-    job: "Werk of studie",
-    goals: "Levensdoelen",
-    interests: "Interesses",
   },
 };
-const tabs = [
-  ["home", "compass"],
-  ["quests", "flag"],
-  ["players", "people"],
-  ["feed", "fire"],
-];
 const routes = {
   landing: "",
   auth: "#/login",
@@ -118,24 +122,6 @@ function getRoute() {
   );
 }
 
-function Brand() {
-  return (
-    <div className="brand">
-      <svg aria-hidden="true" className="mark" viewBox="0 0 42 48">
-        <path fill="#173f33" d="M21 1 40 12v24L21 47 2 36V12z" />
-        <g fill="none" stroke="#d8bc83" strokeWidth="1.4">
-          <path d="m21 7 13 8v17l-13 8-13-8V15z" />
-          <path d="m10 30 8-14 5 9 3-5 7 12M16 32l5-9 5 9" />
-        </g>
-      </svg>
-      <span>
-        <b>LevelUp</b>
-        <small>WORLD</small>
-      </span>
-    </div>
-  );
-}
-
 function AdminAccounts({ words }) {
   const [state, setState] = useState({ accounts: null, error: false });
   const [attempt, setAttempt] = useState(0);
@@ -151,7 +137,6 @@ function AdminAccounts({ words }) {
   }, [attempt]);
   return (
     <>
-      <Heading label={words.admin} title={words.accounts} />
       {state.error ? (
         <p role="alert">
           {words.loadFailed}{" "}
@@ -164,8 +149,8 @@ function AdminAccounts({ words }) {
       ) : !state.accounts.length ? (
         <p>{words.empty}</p>
       ) : (
-        <div className="panel accounts-panel">
-          <table className="accounts-table">
+        <div className="panel accounts-panel app-accounts">
+          <table className="accounts-table" aria-label={words.accounts}>
             <thead>
               <tr>
                 {[words.name, words.email, words.role, words.status].map(
@@ -180,10 +165,18 @@ function AdminAccounts({ words }) {
             <tbody>
               {state.accounts.map((a) => (
                 <tr key={a.id}>
-                  <td>{a.name}</td>
+                  <th scope="row">{a.name}</th>
                   <td>{a.email}</td>
-                  <td>{words[a.role]}</td>
                   <td>
+                    <span className="app-account-cell-label" aria-hidden="true">
+                      {words.role}
+                    </span>
+                    {words[a.role]}
+                  </td>
+                  <td>
+                    <span className="app-account-cell-label" aria-hidden="true">
+                      {words.status}
+                    </span>
                     {a.onboardingComplete ? words.complete : words.incomplete}
                   </td>
                 </tr>
@@ -228,34 +221,48 @@ function Retake({ words, language }) {
   );
 }
 
-function ProfileDetails({ profile, words }) {
-  const fields = ["hobbies", "job", "goals", "interests"].filter(
-    (key) => profile?.[key],
-  );
-  if (!fields.length) return null;
+function PeopleWorkspace({ page, words, navigate }) {
   return (
-    <section className="guide panel personal-details">
-      <h2>{words.details}</h2>
-      <dl>
-        {fields.map((key) => (
-          <div key={key}>
-            <dt>{words[key]}</dt>
-            <dd>{profile[key]}</dd>
-          </div>
+    <>
+      <Heading title={words.people} />
+      <nav className="app-people-switch" aria-label={words.peopleViews}>
+        {["players", "accounts"].map((id) => (
+          <button
+            key={id}
+            type="button"
+            aria-current={page === id ? "page" : undefined}
+            onClick={() => navigate(id)}
+          >
+            {id === "players" ? words.directory : words.accounts}
+          </button>
         ))}
-      </dl>
-    </section>
+      </nav>
+      {page === "accounts" ? (
+        <AdminAccounts words={words} />
+      ) : (
+        <Players embedded />
+      )}
+    </>
   );
 }
 
 function Game({ language, setLanguage, onLogout, authError }) {
-  const { account, game, player, gm, view, modal, warning, navigate, refresh } =
-    useGame();
+  const {
+    account,
+    game,
+    player,
+    gm,
+    view,
+    modal,
+    warning,
+    navigate,
+    refresh,
+    setModal,
+  } = useGame();
   const { t } = useI18n();
   const words = chrome[language];
   const content = useRef(null);
   const { page } = view;
-  const activePage = page === "questEditor" ? "quests" : page;
   const j = player?.journey;
   const step =
     page === "home" && !gm && j
@@ -281,85 +288,58 @@ function Game({ language, setLanguage, onLogout, authError }) {
       </main>
     );
 
-  const links = [...tabs, gm ? ["accounts", "list"] : ["profile", "book"]];
   const house = !gm && houses[j.house];
   const screens = {
     home: gm ? <Overview /> : <Journey />,
     quests: <QuestPage />,
     questEditor: gm ? <QuestEditor {...view.questEditor} /> : null,
-    players: <Players />,
-    feed: <Feed />,
-    accounts: gm ? <AdminAccounts words={words} /> : null,
-    profile: gm ? null : (
-      <>
-        <Profile />
-        <ProfileDetails profile={account.profile} words={words} />
-      </>
+    players: gm ? (
+      <PeopleWorkspace page="players" words={words} navigate={navigate} />
+    ) : (
+      <Players />
     ),
+    feed: <Feed />,
+    accounts: gm ? (
+      <PeopleWorkspace page="accounts" words={words} navigate={navigate} />
+    ) : null,
+    profile: gm ? null : <Profile personalAnswers={account.profile} />,
     test:
       !gm && view.test ? <Retake words={words} language={language} /> : null,
     guide: (
       <>
-        <Heading label="LevelUp World" title={words.about} />
-        <section className="guide panel">
+        <Heading title={words.about} />
+        <section className="guide panel app-guide">
           <p>{words.aboutText}</p>
+          {gm && (
+            <Button
+              kind="textbtn"
+              icon="book"
+              onClick={() => setModal({ kind: "chapter" })}
+            >
+              {words.chapter}
+            </Button>
+          )}
         </section>
       </>
     ),
   };
   return (
     <div
-      className="shell"
+      className="app-shell"
       style={house ? { "--pine": house.tint, "--soft": house.soft } : undefined}
     >
-      <aside className="rail">
-        <Brand />
-        <nav aria-label={words.nav}>
-          {links.map(([id, icon]) => (
-            <button
-              key={id}
-              className={"navbtn " + (activePage === id ? "on" : "")}
-              aria-current={activePage === id ? "page" : undefined}
-              onClick={() => navigate(id)}
-            >
-              <Icon name={icon === "list" ? "people" : icon} />
-              {words[id]}
-            </button>
-          ))}
-        </nav>
-        <div className="railfoot">
-          <Button
-            kind={"guidebtn " + (page === "guide" ? "on" : "")}
-            icon="layers"
-            onClick={() => navigate("guide")}
-          >
-            {words.about}
-          </Button>
-        </div>
-      </aside>
-      <main className="main">
-        <div className="top">
-          <div className="toplabel">
-            <Icon name={gm ? "layers" : "fern"} />{" "}
-            <span>
-              {account.name}
-              {gm ? " · " + words.admin : ""}
-            </span>
-          </div>
-          <div className="rolepick game-actions">
-            <Button
-              kind="topdesign"
-              icon="info"
-              aria-label={words.about}
-              onClick={() => navigate("guide")}
-            />
-            <LanguageSelector language={language} setLanguage={setLanguage} />
-            <Button kind="textbtn" onClick={onLogout}>
-              {words.logOut}
-            </Button>
-          </div>
-        </div>
-        <div className="wrap" ref={content}>
+      <GameNavigation gm={gm} page={page} navigate={navigate} words={words} />
+      <main className="app-main">
+        <GameTopBar
+          account={account}
+          gm={gm}
+          language={language}
+          setLanguage={setLanguage}
+          navigate={navigate}
+          onLogout={onLogout}
+          words={words}
+        />
+        <div className="wrap app-content" ref={content}>
           {(warning || authError) && (
             <p role="alert" className="detailbox">
               {authError ||
@@ -368,9 +348,7 @@ function Game({ language, setLanguage, onLogout, authError }) {
                   : t("Deze wijziging kon niet worden opgeslagen."))}
             </p>
           )}
-          <div className="flow" key={page}>
-            {screens[page] || screens.home}
-          </div>
+          <div key={page}>{screens[page] || screens.home}</div>
         </div>
       </main>
       {modal &&

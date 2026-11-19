@@ -1,0 +1,246 @@
+.quest-workspace .heading .eyebrow:empty {
+  display: none;
+}
+
+.quest-workspace .heading > .primary,
+.work-quest-toolbar > .secondary {
+  flex: 0 0 auto;
+}
+
+.work-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(224px, 1fr);
+  align-items: start;
+  gap: clamp(21px, 4vw, 40px);
+}
+
+.work-overview section {
+  min-width: 0;
+}
+
+.work-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-height: 34px;
+  margin-bottom: 11px;
+}
+
+.work-section-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.work-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 22px;
+  padding-inline: 5px;
+  background: var(--paper);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+
+.work-list {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--white);
+}
+
+.work-list > .item,
+.work-list > .person,
+.work-status-list > button {
+  min-height: 62px;
+  margin: 0;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.work-list > .item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.work-list > :is(.item, .person, button) + :is(.item, .person, button) {
+  border-top: 1px solid var(--line);
+}
+
+.work-list > :is(.item, .person, button):hover {
+  background: var(--paper);
+}
+
+.work-list > :is(.item, .person, button):focus-visible {
+  outline-offset: -4px;
+}
+
+.work-list .tile {
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--pine);
+}
+
+.work-list .tile .ico {
+  width: 17px;
+  height: 17px;
+}
+
+.work-list .item strong,
+.work-list .person b {
+  font-size: 14px;
+}
+
+.work-list .item .meta {
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.work-list .badgewrap {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.work-list .empty,
+.work-list.empty {
+  padding: 21px 16px;
+  text-align: left;
+}
+
+.work-status-list > button {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.work-status-list > button > span:first-child {
+  flex: 1;
+}
+
+.work-status-list > button .ico,
+.work-list .badgewrap > .ico,
+.roster-list .person > .ico {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+.work-all-quests {
+  margin-top: 9px;
+}
+
+.work-quest-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  margin-bottom: 17px;
+}
+
+.work-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.work-filters button {
+  min-height: 36px;
+  padding: 5px 11px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 580;
+  white-space: nowrap;
+}
+
+.work-filters button:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.work-filters button[aria-pressed="true"] {
+  background: var(--soft);
+  color: var(--pine);
+  font-weight: 650;
+}
+
+.work-status-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.work-status-picker select {
+  max-width: 100%;
+  min-height: 36px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--ink);
+}
+
+.work-quest-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.roster-list .person .small {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.roster-list .person b,
+.work-list .item .body {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 780px) {
+  .work-overview {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .work-list > :is(.item, .person),
+  .work-status-list > button {
+    padding-inline: 12px;
+  }
+
+  .work-list > .item {
+    gap: 8px;
+  }
+
+  .work-list .item .badgewrap {
+    max-width: 86px;
+  }
+}

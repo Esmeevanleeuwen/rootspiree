@@ -5,18 +5,85 @@ import { useGame } from "../store.jsx";
 import { newId, points, typeCode } from "../game.js";
 import { houses } from "../content.js";
 import { QuestBrief } from "./QuestBrief.jsx";
-import {
-  Avatar,
-  Button,
-  Chips,
-  Dialog,
-  Field,
-  Heading,
-  Icon,
-  Section,
-} from "./ui.jsx";
+import { Avatar, Button, Dialog, Field, Heading, Icon } from "./ui.jsx";
+import "../community-ui.css";
 
 const finished = ["Behaald", "Niet behaald"];
+const adminFilters = ["Alles", "Ingeleverd", "Open", "Concepten", "Afgerond"];
+const playerFilters = ["Alles", "Open", "Ingeleverd", "Afgerond"];
+const questGroups = ["Ingeleverd", "Open", "Afgerond"];
+const copy = {
+  en: {
+    overview: "Overview",
+    needsReview: "Needs review",
+    viewQueue: "View review queue",
+    queueEmpty: "Submitted quests will appear here.",
+    questStatus: "Quest status",
+    allQuests: "All quests",
+    myQuests: "My quests",
+    questScope: "Quest scope",
+    filterByStatus: "Filter by status",
+    directoryFilter: "Filter people",
+    allPeople: "Everyone",
+    players: "Players",
+    characters: "Characters",
+    noPeople: "No one in this list yet.",
+    noPosts: "No posts yet. Start the conversation.",
+    adminFilters: {
+      Alles: "All quests",
+      Ingeleverd: "To review",
+      Open: "Active",
+      Concepten: "Drafts",
+      Afgerond: "Completed",
+    },
+    playerFilters: {
+      Alles: "Any status",
+      Open: "Open",
+      Ingeleverd: "Submitted",
+      Afgerond: "Completed",
+    },
+  },
+  nl: {
+    overview: "Overzicht",
+    needsReview: "Te beoordelen",
+    viewQueue: "Bekijk inzendingen",
+    queueEmpty: "Ingeleverde opdrachten verschijnen hier.",
+    questStatus: "Opdrachtstatus",
+    allQuests: "Alle opdrachten",
+    myQuests: "Mijn opdrachten",
+    questScope: "Opdrachten weergeven",
+    filterByStatus: "Filter op status",
+    directoryFilter: "Filter personen",
+    allPeople: "Iedereen",
+    players: "Spelers",
+    characters: "Personages",
+    noPeople: "Er staat nog niemand in deze lijst.",
+    noPosts: "Nog geen berichten. Begin het gesprek.",
+    adminFilters: {
+      Alles: "Alle opdrachten",
+      Ingeleverd: "Te beoordelen",
+      Open: "Actief",
+      Concepten: "Concepten",
+      Afgerond: "Afgerond",
+    },
+    playerFilters: {
+      Alles: "Alle statussen",
+      Open: "Open",
+      Ingeleverd: "Ingeleverd",
+      Afgerond: "Afgerond",
+    },
+  },
+};
+
+function belongsToFilter(quest, filter) {
+  return (
+    filter === "Alles" ||
+    (filter === "Afgerond"
+      ? finished.includes(quest.state)
+      : quest.state === filter)
+  );
+}
+
 function Status({ value }) {
   const { t } = useI18n();
   return (
@@ -34,6 +101,7 @@ function Status({ value }) {
     </span>
   );
 }
+
 export function QuestList({ items }) {
   const { t } = useI18n();
   const { game, setModal } = useGame();
@@ -68,48 +136,83 @@ export function QuestList({ items }) {
     <div className="empty">{t("Geen opdrachten in deze selectie.")}</div>
   );
 }
+
 function Roster({ items }) {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const { game, setModal } = useGame();
+  if (!items.length)
+    return <div className="work-list empty">{copy[language].noPeople}</div>;
   return (
-    <div className="panel">
-      {items.map((p, i) => (
+    <div className="work-list roster-list">
+      {items.map((p) => (
         <button
           className="person"
           key={p.id}
           onClick={() => setModal({ kind: "player", id: p.id })}
         >
-          <span className="rank">{String(i + 1).padStart(2, "0")}</span>
           <Avatar player={p} />
           <span className="identity">
             <span>
               <b>{exampleText(t, examples.players, p, "name")}</b>
-              <span className="small">
-                {p.npc
-                  ? t("NPC · Evil")
-                  : p.registered
-                    ? t("Speler")
-                    : exampleText(t, examples.players, p, "role")}
-              </span>
+              {p.npc && (
+                <span className="small">
+                  {exampleText(t, examples.players, p, "role")}
+                </span>
+              )}
             </span>
           </span>
           <span className="score">
             {points(game, p)} <small>pt</small>
           </span>
+          <Icon name="chev" />
         </button>
       ))}
     </div>
   );
 }
+
 const ranked = (game) =>
   [...game.players].sort((a, b) => points(game, b) - points(game, a));
-export function Overview() {
-  const { t } = useI18n();
-  const { game, navigate, setModal } = useGame();
-  const pending = game.quests.filter((q) => q.state === "Ingeleverd");
+
+function FilterBar({ label, choices, selected, onChange }) {
   return (
-    <>
-      <Heading label={t("Spelleider")} title={t("Speloverzicht")}>
+    <div className="work-filters" role="group" aria-label={label}>
+      {Object.entries(choices).map(([key, name]) => (
+        <button
+          key={key}
+          type="button"
+          aria-pressed={selected === key}
+          onClick={() => onChange(key)}
+        >
+          {name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function Overview() {
+  const { language, t } = useI18n();
+  const words = copy[language];
+  const { game, navigate } = useGame();
+  const pending = game.quests.filter((quest) =>
+    belongsToFilter(quest, "Ingeleverd"),
+  );
+  const statusLinks = [
+    [
+      "Open",
+      game.quests.filter((quest) => belongsToFilter(quest, "Open")).length,
+    ],
+    ["Concepten", game.questDrafts?.length ?? 0],
+    [
+      "Afgerond",
+      game.quests.filter((quest) => belongsToFilter(quest, "Afgerond")).length,
+    ],
+  ];
+  const openFilter = (questFilter) => navigate("quests", { questFilter });
+  return (
+    <div className="quest-workspace">
+      <Heading title={words.overview}>
         <Button
           icon="plus"
           onClick={() =>
@@ -119,86 +222,144 @@ export function Overview() {
           {t("Nieuwe opdracht")}
         </Button>
       </Heading>
-      <section className="hero">
-        <span className="tag">
-          <Icon name="book" /> {t("Hoofdstuk I")}
-        </span>
-        <h2 className="chapter">{t("De Luistervallei")}</h2>
-        <p>{t("Oefen samen met luisteren, doorvragen en ruimte geven.")}</p>
-        <Button
-          kind="pale"
-          icon="book"
-          onClick={() => setModal({ kind: "chapter" })}
-        >
-          {t("Bekijk het hoofdstuk")}
-        </Button>
-      </section>
-      <div className="cols">
+      <div className="work-overview">
         <section>
-          <Section title={t("Te beoordelen")}>
-            <Button kind="textbtn" onClick={() => navigate("quests")}>
-              {t("Alle opdrachten")}
-            </Button>
-          </Section>
-          {pending.length ? (
-            <QuestList items={pending.slice(0, 3)} />
-          ) : (
-            <p className="empty">{t("Je hebt alle inzendingen beoordeeld.")}</p>
-          )}
+          <div className="work-section-heading">
+            <h2>
+              {words.needsReview}{" "}
+              <span className="work-count">{pending.length}</span>
+            </h2>
+            {pending.length > 0 && (
+              <Button kind="textbtn" onClick={() => openFilter("Ingeleverd")}>
+                {words.viewQueue}
+              </Button>
+            )}
+          </div>
+          <div className="work-list">
+            {pending.length ? (
+              <QuestList items={pending.slice(0, 5)} />
+            ) : (
+              <p className="empty">{words.queueEmpty}</p>
+            )}
+          </div>
         </section>
         <section>
-          <Section title={t("Ranglijst")}>
-            <Button kind="textbtn" onClick={() => navigate("players")}>
-              {t("Alle spelers")}
-            </Button>
-          </Section>
-          <Roster items={ranked(game).slice(0, 3)} />
+          <div className="work-section-heading">
+            <h2>{words.questStatus}</h2>
+          </div>
+          <div className="work-list work-status-list">
+            {statusLinks.map(([status, count]) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => openFilter(status)}
+              >
+                <span>{words.adminFilters[status]}</span>
+                <span className="work-count">{count}</span>
+                <Icon name="chev" />
+              </button>
+            ))}
+          </div>
+          <Button
+            kind="textbtn work-all-quests"
+            onClick={() => openFilter("Alles")}
+          >
+            {words.allQuests}
+          </Button>
         </section>
       </div>
-    </>
+    </div>
   );
 }
+
 export function QuestPage() {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
+  const words = copy[language];
   const { game, player, gm, navigate, view } = useGame();
-  const [filter, setFilter] = useState(
-    gm && view.questFilter === "Concepten" ? "Concepten" : "Alles",
-  );
-  const showDrafts = gm && filter === "Concepten";
+  const availableFilters = gm ? adminFilters : playerFilters;
+  const filter = availableFilters.includes(view.questFilter)
+    ? view.questFilter
+    : "Alles";
+  const scope = gm || view.questScope === "all" ? "all" : "mine";
   const items = game.quests.filter(
-    (q) =>
-      filter === "Alles" ||
-      (filter === "Van mij"
-        ? q.playerId === player.id
-        : filter === "Afgerond"
-          ? finished.includes(q.state)
-          : q.state === filter),
+    (quest) =>
+      (scope === "all" || quest.playerId === player.id) &&
+      belongsToFilter(quest, filter),
   );
+  const byStatus = (status) =>
+    items.filter((quest) => belongsToFilter(quest, status));
   return (
-    <>
-      <Heading label={t("Spelwereld")} title={t("Opdrachten")}>
+    <div className="quest-workspace">
+      <Heading title={t("Opdrachten")}>
         {gm && (
           <Button icon="plus" onClick={() => navigate("questEditor")}>
             {t("Nieuwe opdracht")}
           </Button>
         )}
       </Heading>
-      <Chips
-        items={[
-          "Alles",
-          ...(gm ? [] : ["Van mij"]),
-          "Open",
-          "Ingeleverd",
-          "Afgerond",
-          ...(gm ? ["Concepten"] : []),
-        ]}
-        value={filter}
-        onChange={setFilter}
-      />
-      <div className="single">
-        {showDrafts ? <QuestDraftList /> : <QuestList items={items} />}
+      <div className="work-quest-toolbar">
+        {gm ? (
+          <FilterBar
+            label={words.filterByStatus}
+            choices={words.adminFilters}
+            selected={filter}
+            onChange={(questFilter) => navigate("quests", { questFilter })}
+          />
+        ) : (
+          <>
+            <FilterBar
+              label={words.questScope}
+              choices={{ mine: words.myQuests, all: words.allQuests }}
+              selected={scope}
+              onChange={(questScope) =>
+                navigate("quests", { questFilter: filter, questScope })
+              }
+            />
+            <label className="work-status-picker">
+              <span>{words.filterByStatus}</span>
+              <select
+                value={filter}
+                onChange={({ target: { value: questFilter } }) =>
+                  navigate("quests", { questFilter, questScope: scope })
+                }
+              >
+                {Object.entries(words.playerFilters).map(([key, name]) => (
+                  <option key={key} value={key}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
       </div>
-    </>
+      {gm && filter === "Alles" && items.length ? (
+        <div className="work-quest-groups">
+          {questGroups.map((status) => {
+            const quests = byStatus(status);
+            if (!quests.length) return null;
+            return (
+              <section key={status}>
+                <div className="work-section-heading">
+                  <h2>{words.adminFilters[status]}</h2>
+                </div>
+                <div className="work-list">
+                  <QuestList items={quests} />
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="work-list">
+          {filter === "Concepten" ? (
+            <QuestDraftList />
+          ) : (
+            <QuestList items={items} />
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -231,51 +392,68 @@ function QuestDraftList() {
               : t("Kies nog een speler")}
           </span>
         </span>
-        <span className="badgewrap">{t("Open concept")}</span>
+        <span className="badgewrap">
+          <Icon name="chev" />
+        </span>
       </button>
     );
   });
 }
-export function Players() {
-  const { t } = useI18n();
+
+export function Players({ embedded = false }) {
+  const { language, t } = useI18n();
+  const words = copy[language];
   const { game, gm, setModal } = useGame();
-  const [filter, setFilter] = useState("Alles");
+  const [filter, setFilter] = useState("players");
   return (
-    <>
-      <Heading label={t("Spelwereld")} title={t("Spelers")}>
+    <div className="quest-workspace">
+      {!embedded && <Heading title={t("Spelers")} />}
+      <div className="work-quest-toolbar">
+        <FilterBar
+          label={words.directoryFilter}
+          choices={{
+            players: words.players,
+            characters: words.characters,
+            all: words.allPeople,
+          }}
+          selected={filter}
+          onChange={setFilter}
+        />
         {gm && (
-          <Button icon="plus" onClick={() => setModal({ kind: "addPlayer" })}>
+          <Button
+            kind="secondary"
+            icon="plus"
+            onClick={() => setModal({ kind: "addPlayer" })}
+          >
             {t("Personage toevoegen")}
           </Button>
         )}
-      </Heading>
-      <Chips
-        items={["Alles", "Goede kant", "NPC · Evil"]}
-        value={filter}
-        onChange={setFilter}
-      />
-      <div className="single">
-        <Roster
-          items={ranked(game).filter(
-            (p) => filter === "Alles" || !!p.npc === (filter === "NPC · Evil"),
-          )}
-        />
       </div>
-    </>
+      <Roster
+        items={ranked(game).filter(
+          (person) =>
+            filter === "all" ||
+            Boolean(person.npc) === (filter === "characters"),
+        )}
+      />
+    </div>
   );
 }
 export function Feed() {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const { game, gm, player, mutate, setModal } = useGame();
   const voter = gm ? "gm" : player.id;
   return (
     <>
-      <Heading label="Community" title={t("Kampvuur")}>
+      <Heading title={t("Kampvuur")}>
         <Button icon="pen" onClick={() => setModal({ kind: "post" })}>
           {t("Schrijf iets")}
         </Button>
       </Heading>
       <div className="single">
+        {!game.posts.length && (
+          <p className="work-list empty">{copy[language].noPosts}</p>
+        )}
         {game.posts.map((post) => {
           const author = game.players.find((p) => p.id === post.playerId) || {
             av: "tide",

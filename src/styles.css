@@ -69,119 +69,6 @@ p {
   stroke-linejoin: round;
   flex: none;
 }
-.shell {
-  display: grid;
-  grid-template-columns: 216px minmax(0, 1fr);
-  min-height: 100vh;
-}
-.rail {
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-  padding: 34px 16px 22px;
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  background: #eff2e9;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin: 0 7px 55px;
-  color: var(--pine);
-  line-height: 1;
-}
-.brand b {
-  font-family: var(--serif);
-  font-size: 28px;
-  letter-spacing: -1.4px;
-  white-space: nowrap;
-}
-.brand small {
-  display: block;
-  font-size: 10px;
-  letter-spacing: 4px;
-  margin: 6px 0 0 2px;
-  font-weight: 750;
-}
-.brand .mark {
-  height: 46px;
-  width: 40px;
-}
-.navbtn,
-.guidebtn {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  text-align: left;
-  border-radius: 9px;
-  width: 100%;
-  padding: 12px 14px;
-  font-size: 15px;
-  color: var(--muted);
-  font-weight: 550;
-}
-.navbtn + .navbtn {
-  margin-top: 4px;
-}
-.navbtn.on,
-.guidebtn.on {
-  background: #dae6d6;
-  color: #193d32;
-}
-.navbtn:hover,
-.guidebtn:hover {
-  background: #e3eade;
-}
-.railfoot {
-  margin-top: auto;
-  border-top: 1px solid var(--line);
-  padding-top: 14px;
-}
-.main {
-  min-width: 0;
-}
-.top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  min-height: 72px;
-  border-bottom: 1px solid var(--line);
-  padding: 12px clamp(20px, 3.6vw, 64px);
-}
-.toplabel,
-.trail {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 14px;
-  color: var(--muted);
-}
-.toplabel .ico {
-  width: 17px;
-}
-.seg {
-  display: flex;
-  gap: 2px;
-  background: #e9ede4;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 3px;
-}
-.seg button {
-  padding: 6px 11px;
-  font-size: 13px;
-  border-radius: 6px;
-  color: var(--muted);
-  font-weight: 600;
-}
-.seg button.on {
-  background: var(--white);
-  color: var(--pine);
-  box-shadow: 0 1px 4px #193c291c;
-}
 .wrap {
   max-width: 1510px;
   margin: auto;
@@ -224,12 +111,6 @@ p {
 }
 h1,
 h2,
-.chapter,
-.large {
-  font-family: var(--serif);
-  font-weight: 500;
-  letter-spacing: -0.035em;
-}
 h1 {
   font-size: clamp(32px, 3.05vw, 50px);
   line-height: 1.1;
@@ -280,40 +161,6 @@ h2 {
 .secondary .ico,
 .pale .ico {
   width: 17px;
-}
-.hero {
-  padding: clamp(24px, 3vw, 44px);
-  min-height: 228px;
-  background: #15372f url("./assets/vallei.webp") center/cover;
-  border-radius: 17px;
-  color: #fcf5de;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-.hero .tag {
-  color: #ebd3a3;
-  gap: 10px;
-}
-.hero .tag .ico {
-  width: 19px;
-}
-.chapter {
-  font-size: clamp(38px, 4vw, 62px);
-  line-height: 1.05;
-  margin: 10px 0 5px;
-  color: #fff9e9;
-}
-.hero p {
-  font-size: 15px;
-  color: #f1efdf;
-  max-width: 44ch;
-}
-.hero .pale {
-  margin-top: 20px;
 }
 .cols {
   display: grid;
@@ -461,11 +308,6 @@ h2 {
 .tide {
   background: #d9e8eb;
   color: #365c67;
-}
-.rank {
-  min-width: 20px;
-  font: italic 19px var(--serif);
-  color: #62766b;
 }
 .person {
   display: flex;
@@ -712,9 +554,6 @@ textarea {
 .zone {
   margin-bottom: 8px;
 }
-.topdesign {
-  display: none;
-}
 .panel .empty {
   padding: 18px 0;
 }
@@ -739,22 +578,7 @@ textarea {
     transform: scale(1);
   }
 }
-@media (min-width: 1500px) {
-  .shell {
-    grid-template-columns: 245px minmax(0, 1fr);
-  }
-  .hero {
-    min-height: 280px;
-  }
-}
 @media (max-width: 1120px) and (min-width: 771px) {
-  .shell {
-    grid-template-columns: 175px minmax(0, 1fr);
-  }
-  .rail {
-    padding-left: 8px;
-    padding-right: 8px;
-  }
   .cols {
     grid-template-columns: 1.3fr 1fr;
   }
@@ -771,56 +595,6 @@ textarea {
   }
 }
 @media (max-width: 770px) {
-  .shell {
-    display: block;
-  }
-  .rail {
-    position: fixed;
-    inset: auto 0 0;
-    height: auto;
-    z-index: 3;
-    display: block;
-    padding: 4px 4px max(env(safe-area-inset-bottom), 5px);
-    background: #f3f5ee;
-    border-top: 1px solid var(--line);
-    border-right: 0;
-  }
-  .rail .brand,
-  .railfoot {
-    display: none;
-  }
-  .rail nav {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .navbtn {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 6px 2px;
-    font-size: 12px;
-  }
-  .navbtn + .navbtn {
-    margin: 0;
-  }
-  .top {
-    min-height: 59px;
-    padding: 8px 16px;
-  }
-  .toplabel {
-    font-size: 13px;
-  }
-  .topdesign {
-    display: flex;
-    color: var(--muted);
-    padding: 3px;
-  }
-  .toplabel > .ico {
-    display: none;
-  }
-  .seg button {
-    padding: 5px 9px;
-  }
   .wrap {
     padding: 20px 16px 85px;
   }
@@ -828,22 +602,6 @@ textarea {
     grid-template-columns: 1fr;
     gap: 22px;
     margin-top: 22px;
-  }
-  .hero {
-    min-height: 212px;
-    background-position: 62% center;
-  }
-  .hero:before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, #143c3199, transparent);
-  }
-  .hero > * {
-    position: relative;
-  }
-  .hero p {
-    max-width: 26ch;
   }
   .heading {
     margin-bottom: 17px;
@@ -886,12 +644,6 @@ textarea {
   }
   .heading > .primary {
     font-size: 13px;
-  }
-  .chapter {
-    font-size: 38px;
-  }
-  .hero {
-    padding: 20px;
   }
   .panel {
     padding: 0 12px;
@@ -1249,24 +1001,6 @@ textarea {
 .stepList li {
   padding: 3px 0;
 }
-.rolepick {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.rolepick label {
-  font-size: 13px;
-  color: var(--muted);
-}
-#who {
-  width: auto;
-  max-width: 150px;
-  padding: 6px;
-  font-size: 14px;
-}
-.top {
-  flex-wrap: wrap;
-}
 .focusCard h2,
 .guide h2 {
   overflow-wrap: anywhere;
@@ -1310,18 +1044,6 @@ textarea {
   }
   .houseText {
     padding: 10px;
-  }
-  .toplabel {
-    display: none;
-  }
-  .rolepick {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .rolepick label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
   }
   .question {
     grid-template-columns: 1fr;
@@ -1371,9 +1093,6 @@ textarea {
   .revealBox {
     gap: 10px;
   }
-  .rolepick .topdesign {
-    margin-left: auto;
-  }
   .houseText b {
     font-size: 20px;
   }
@@ -1397,12 +1116,6 @@ textarea {
 }
 .revealBox .sigil {
   position: relative;
-}
-.rolepick {
-  justify-content: flex-end;
-}
-.rolepick #who {
-  margin-left: 4px;
 }
 .wrap {
   min-width: 0;
@@ -1445,11 +1158,6 @@ textarea {
     transform: scale(1.2);
   }
 }
-@media (max-width: 770px) {
-  .rolepick {
-    justify-content: space-between;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .plate:before,
   .revealBox .sigil,
@@ -1460,54 +1168,17 @@ textarea {
     display: none;
   }
 }
-.profile-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(220px, 1fr);
-  gap: clamp(18px, 3vw, 44px);
-  align-items: start;
-  max-width: 1100px;
-}
-.profile-primary,
-.profile-aside {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.profile-primary > .actions {
-  margin-top: 18px;
-}
-.profile-primary > .note {
-  margin-top: 12px;
-}
-.profile-aside .identity {
-  gap: 12px;
-}
-.profile-fact {
-  display: grid;
-  gap: 3px;
-  border-top: 1px solid var(--line);
-  padding-top: 14px;
-  margin-top: 16px;
-}
-.profile-fact span,
 .trait-ends,
 .test-progress,
 .rating-caption {
   color: var(--muted);
   font-size: 0.86rem;
 }
-.test-result,
 .test-sheet {
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 15px;
   padding: clamp(20px, 3vw, 40px);
-}
-.test-result h2 {
-  font-family: var(--serif);
-  font-size: clamp(2.35rem, 5vw, 4.4rem);
-  line-height: 1.1;
-  margin: 8px 0 12px;
-  color: var(--pine);
 }
 .trait-list {
   margin-top: 25px;
@@ -1671,23 +1342,8 @@ textarea {
   padding: 9px 0;
 }
 @media (max-width: 770px) {
-  .rail nav {
-    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-  }
-  .profile-layout {
-    grid-template-columns: 1fr;
-  }
   .test-sheet {
     padding: 18px 14px;
-  }
-  .profile-aside {
-    padding: 18px;
-  }
-  .rolepick #who {
-    max-width: 110px;
-  }
-  .rolepick .seg {
-    flex-shrink: 0;
   }
   .platecopy .actions {
     flex-wrap: wrap;
@@ -1710,10 +1366,6 @@ textarea {
   padding: 24px;
 }
 
-.game-actions {
-  margin-left: auto;
-  flex-wrap: wrap;
-}
 .accounts-panel {
   overflow: auto;
 }
@@ -1728,23 +1380,6 @@ textarea {
 }
 .accounts-table tbody tr {
   border-top: 1px solid var(--line);
-}
-.personal-details {
-  max-width: 760px;
-  margin-top: 24px;
-}
-.personal-details dl {
-  display: grid;
-  gap: 16px;
-}
-.personal-details dt {
-  font-weight: 700;
-  color: var(--pine);
-}
-.personal-details dd {
-  margin: 2px 0 0;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
 }
 @media (max-width: 480px) {
   .accounts-table th,
