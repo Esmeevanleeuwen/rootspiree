@@ -1,3 +1,4 @@
+import { exerciseStepText, useI18n } from "../i18n.jsx";
 import { useState } from "react";
 import { useGame } from "../store.jsx";
 import { axes, goalKinds, houses, letters, scenes } from "../content.js";
@@ -22,36 +23,31 @@ import {
 import { QuestList } from "./Community.jsx";
 
 function Welcome() {
-  const { player, stage, setModal, startTest } = useGame();
+  const { t } = useI18n();
+  const { player, stage, setModal } = useGame();
   return (
     <>
       <Plate
         large
-        label="Aankomst in de Luistervallei"
-        title="De haven onder de mist"
-        description={
-          "Eén nacht per jaar trekt de zee zich terug en verschijnt er een vergeten haven. Vanavond ligt er een roeispaan voor jou klaar, " +
-          player.name +
-          "."
-        }
+        label={t("Aankomst in de Luistervallei")}
+        title={t("De haven onder de mist")}
+        description={t(
+          "Eén nacht per jaar trekt de zee zich terug en verschijnt er een vergeten haven. Vanavond ligt er een roeispaan voor jou klaar, {name}.",
+          { name: player.name },
+        )}
       >
         <div className="actions">
-          {!player.registered && (
-            <Button kind="pale" icon="plus" onClick={() => startTest(true)}>
-              Account aanmaken
-            </Button>
-          )}
           <Button
-            kind={player.registered ? "pale" : "entry-link"}
+            kind="pale"
             onClick={() => stage("story", { index: 0, answers: [] })}
           >
-            {player.registered ? "Stap aan boord" : "Speel als " + player.name}
+            {t("Stap aan boord")}
           </Button>
         </div>
       </Plate>
       <div className="minihead voyageHead">
-        <h2>De vier huizen</h2>
-        <span className="small">Jouw keuzes wijzen de weg</span>
+        <h2>{t("De vier huizen")}</h2>
+        <span className="small">{t("Jouw keuzes wijzen de weg")}</span>
       </div>
       <div className="houseGrid">
         {Object.entries(houses).map(([key, h]) => (
@@ -64,21 +60,23 @@ function Welcome() {
             <span className="houseText">
               <Stamp house={key} />
               <span>
-                <b>{h.name}</b>
-                <small>{h.verb}</small>
+                <b>{t(h.name)}</b>
+                <small>{t(h.verb)}</small>
               </span>
             </span>
           </button>
         ))}
       </div>
       <p className="journeyNote">
-        Vijf keuzes brengen je naar een huis. Daarna geef je je eigen doel een
-        plek in de wereld.
+        {t(
+          "Vijf keuzes brengen je naar een huis. Daarna geef je je eigen doel een plek in de wereld.",
+        )}
       </p>
     </>
   );
 }
 function StoryQuestion({ deep }) {
+  const { t } = useI18n();
   const { player, stage } = useGame();
   const j = player.journey;
   const list = deep ? letters : scenes,
@@ -119,16 +117,21 @@ function StoryQuestion({ deep }) {
       <div className={"storyPic " + (deep ? "letterPic" : "scenePic")}>
         <span>
           <Icon name={deep ? "pen" : "compass"} />
-          {deep ? "De post van morgen" : "De laagwaterreis"}
+          {deep ? t("De post van morgen") : t("De laagwaterreis")}
         </span>
       </div>
       <div className="questionCopy">
         <div className="progressmeta">
           <span>
-            {deep ? "Brief" : "Keuze"} {index + 1} van {list.length}
+            {t(
+              deep
+                ? "Brief {current} van {total}"
+                : "Keuze {current} van {total}",
+              { current: index + 1, total: list.length },
+            )}
           </span>
           <Button kind="textbtn" onClick={back}>
-            Terug
+            {t("Terug")}
           </Button>
         </div>
         <div className="segments" aria-hidden="true">
@@ -136,8 +139,8 @@ function StoryQuestion({ deep }) {
             <i key={n} className={n <= index ? "filled" : ""} />
           ))}
         </div>
-        <h1>{deep ? scene[1] : scene.title}</h1>
-        <p>{deep ? scene[2] : scene.story}</p>
+        <h1>{t(deep ? scene[1] : scene.title)}</h1>
+        <p>{t(deep ? scene[2] : scene.story)}</p>
         <div className="options">
           {options.map(([value, text]) => (
             <button
@@ -147,7 +150,7 @@ function StoryQuestion({ deep }) {
               onClick={() => answer(value)}
             >
               <i />
-              {text}
+              {t(text)}
             </button>
           ))}
         </div>
@@ -156,6 +159,7 @@ function StoryQuestion({ deep }) {
   );
 }
 function HouseResult({ tie }) {
+  const { t } = useI18n();
   const { player, stage } = useGame();
   const j = player.journey,
     h = houses[j.house];
@@ -163,10 +167,14 @@ function HouseResult({ tie }) {
   if (tie)
     return (
       <>
-        <Heading label="De laagwaterreis" title="Twee oevers trekken aan je" />
+        <Heading
+          label={t("De laagwaterreis")}
+          title={t("Twee oevers trekken aan je")}
+        />
         <p>
-          Je antwoorden passen even goed bij deze huizen. Van welke plek wil jij
-          je thuis maken?
+          {t(
+            "Je antwoorden passen even goed bij deze huizen. Van welke plek wil jij je thuis maken?",
+          )}
         </p>
         <div className="tieGrid">
           {houseCandidates(j.answers).map((k) => (
@@ -176,13 +184,13 @@ function HouseResult({ tie }) {
               onClick={() => stage("reveal", { house: k })}
             >
               <span className={"houseArt tile-" + k} />
-              <b>{houses[k].name}</b>
-              <span>{houses[k].motto}</span>
+              <b>{t(houses[k].name)}</b>
+              <span>{t(houses[k].motto)}</span>
             </button>
           ))}
         </div>
         <Button kind="textbtn" onClick={back}>
-          Terug naar mijn laatste keuze
+          {t("Terug naar mijn laatste keuze")}
         </Button>
       </>
     );
@@ -192,9 +200,9 @@ function HouseResult({ tie }) {
       <Plate
         house={j.house}
         large
-        label="Jouw huis"
-        title={h.name}
-        description={h.motto}
+        label={t("Jouw huis")}
+        title={t(h.name)}
+        description={t(h.motto)}
       />
       <div className="revealBox">
         <div>
@@ -202,16 +210,20 @@ function HouseResult({ tie }) {
         </div>
         <div>
           <h2>
-            Welkom in {h.place.replace(/^(De|Het) /, (s) => s.toLowerCase())}
+            {t("Welkom in {place}", {
+              place: t(h.place).replace(/^(De|Het|The) /, (article) =>
+                article.toLowerCase(),
+              ),
+            })}
           </h2>
           <p>
-            {h.trait} {h.ritual}
+            {t(h.trait)} {t(h.ritual)}
           </p>
           {clueIndex >= 0 && (
             <>
-              <p className="note">Een keuze die hierop wees</p>
+              <p className="note">{t("Een keuze die hierop wees")}</p>
               <blockquote>
-                {scenes[clueIndex].opts.find(([k]) => k === j.house)[1]}
+                {t(scenes[clueIndex].opts.find(([k]) => k === j.house)[1])}
               </blockquote>
             </>
           )}
@@ -222,11 +234,11 @@ function HouseResult({ tie }) {
               }
             >
               {j.goals.length
-                ? "Terug naar mijn kamer"
-                : "Geef je doel een plek"}
+                ? t("Terug naar mijn kamer")
+                : t("Geef je doel een plek")}
             </Button>
             <Button kind="textbtn" onClick={back}>
-              Bekijk mijn laatste keuze
+              {t("Bekijk mijn laatste keuze")}
             </Button>
           </div>
         </div>
@@ -235,13 +247,16 @@ function HouseResult({ tie }) {
   );
 }
 function GoalForm() {
+  const { t } = useI18n();
   const { player, editJourney, stage } = useGame();
   const j = player.journey,
     old = j.goals.find((g) => g.id === j.editGoal);
   const [kind, setKind] = useState(old?.kind || "voice");
   const [error, setError] = useState("");
-  function submit(e) {
+  const [busy, setBusy] = useState(false);
+  async function submit(e) {
     e.preventDefault();
+    if (busy) return;
     const data = new FormData(e.currentTarget);
     const goal = { id: old?.id || newId(), kind, shared: data.has("shared") };
     for (const k of ["text", "situation", "action", "sign"])
@@ -250,7 +265,9 @@ function GoalForm() {
       setError("Vul je doel, je eerste actie en een teken van vooruitgang in.");
       return;
     }
-    editJourney((next) => {
+    setError("");
+    setBusy(true);
+    await editJourney((next) => {
       const found = next.goals.find((g) => g.id === goal.id);
       if (found) Object.assign(found, goal);
       else next.goals.push(goal);
@@ -259,71 +276,76 @@ function GoalForm() {
       next.stage =
         !next.prefs && next.goals.length === 1 && !old ? "letterIntro" : "room";
     });
+    setBusy(false);
   }
   return (
     <>
       <Heading
-        label="Mijn veldboek"
-        title={old ? "Doel bijstellen" : "Wat wil jij oefenen?"}
+        label={t("Mijn veldboek")}
+        title={old ? t("Doel bijstellen") : t("Wat wil jij oefenen?")}
       />
       <section className="formpanel">
         <form onSubmit={submit}>
-          <Field label="Welke richting past hierbij?">
+          <Field label={t("Welke richting past hierbij?")}>
             <select value={kind} onChange={(e) => setKind(e.target.value)}>
               {Object.entries(goalKinds).map(([k, v]) => (
                 <option key={k} value={k}>
-                  {v.label}
+                  {t(v.label)}
                 </option>
               ))}
             </select>
           </Field>
-          <Field label="Mijn doel, in mijn eigen woorden">
+          <Field label={t("Mijn doel, in mijn eigen woorden")}>
             <textarea
               name="text"
               required
               maxLength={220}
               defaultValue={old?.text}
-              placeholder={goalKinds[kind].example}
+              placeholder={t(goalKinds[kind].example)}
             />
           </Field>
-          <Field label="Wanneer of waar wil je dit oefenen?">
+          <Field label={t("Wanneer of waar wil je dit oefenen?")}>
             <input
               name="situation"
               maxLength={150}
               defaultValue={old?.situation}
-              placeholder="Bijvoorbeeld tijdens het volgende teamoverleg"
+              placeholder={t("Bijvoorbeeld tijdens het volgende teamoverleg")}
             />
           </Field>
-          <Field label="Wat wordt je eerste kleine actie?">
+          <Field label={t("Wat wordt je eerste kleine actie?")}>
             <input
               name="action"
               required
               maxLength={170}
               defaultValue={old?.action}
-              placeholder="Bijvoorbeeld één vraag stellen voordat ik advies geef"
+              placeholder={t(
+                "Bijvoorbeeld één vraag stellen voordat ik advies geef",
+              )}
             />
           </Field>
-          <Field label="Ik merk vooruitgang als…">
+          <Field label={t("Ik merk vooruitgang als…")}>
             <input
               name="sign"
               required
               maxLength={170}
               defaultValue={old?.sign}
-              placeholder="Bijvoorbeeld ik de ander heb laten uitpraten"
+              placeholder={t("Bijvoorbeeld ik de ander heb laten uitpraten")}
             />
           </Field>
           <label className="sharing">
             <input type="checkbox" name="shared" defaultChecked={old?.shared} />{" "}
-            Laat de spelleider dit doel en mijn eerste stap zien
+            {t("Laat de spelleider dit doel en mijn eerste stap zien")}
           </label>
-          {error && <p role="alert">{error}</p>}
+          {error && <p role="alert">{t(error)}</p>}
           <div className="actions">
-            <Button type="submit">Bewaar mijn doel</Button>
+            <Button type="submit" disabled={busy}>
+              {t("Bewaar mijn doel")}
+            </Button>
             <Button
               kind="textbtn"
               onClick={() => stage(j.goals.length ? "goals" : "reveal")}
             >
-              {j.goals.length ? "Annuleren" : "Terug"}
+              {j.goals.length ? t("Annuleren") : t("Terug")}
             </Button>
           </div>
         </form>
@@ -332,59 +354,65 @@ function GoalForm() {
   );
 }
 function Goals() {
+  const { t } = useI18n();
   const { player, stage } = useGame(),
     j = player.journey;
   return (
     <>
-      <Heading label="Mijn veldboek" title="Mijn doelen">
+      <Heading label={t("Mijn veldboek")} title={t("Mijn doelen")}>
         <Button onClick={() => stage("goal", { editGoal: null })}>
-          Nieuw doel
+          {t("Nieuw doel")}
         </Button>
       </Heading>
       <div className="single">
         {j.goals.map((g) => (
           <article key={g.id} className="guide panel">
             {g.id === j.activeGoal && (
-              <span className="eyebrow">Huidig doel</span>
+              <span className="eyebrow">{t("Huidig doel")}</span>
             )}
             <h2>{g.text}</h2>
             <p>{g.action}</p>
-            <p className="note">Ik merk vooruitgang als {g.sign}.</p>
+            <p className="note">
+              {t("Ik merk vooruitgang als {sign}.", { sign: g.sign })}
+            </p>
             <div className="actions">
               {g.id !== j.activeGoal && (
                 <Button
                   kind="secondary"
                   onClick={() => stage("room", { activeGoal: g.id })}
                 >
-                  Hieraan werken
+                  {t("Hieraan werken")}
                 </Button>
               )}
               <Button
                 kind="textbtn"
                 onClick={() => stage("goal", { editGoal: g.id })}
               >
-                Bijstellen
+                {t("Bijstellen")}
               </Button>
             </div>
           </article>
         ))}
         <Button kind="textbtn" onClick={() => stage("room")}>
-          Terug naar mijn kamer
+          {t("Terug naar mijn kamer")}
         </Button>
       </div>
     </>
   );
 }
 function LettersIntro() {
+  const { t } = useI18n();
   const { stage } = useGame();
   return (
     <>
       <Plate
         large
         house="nacht"
-        label="Tweede verhaal · Acht brieven"
-        title="De post van morgen"
-        description="Aan de overkant van de haven staat een brievenbus die post uit morgen ontvangt. Deze week ben jij de bezorger. Hoe pak jij het aan?"
+        label={t("Tweede verhaal · Acht brieven")}
+        title={t("De post van morgen")}
+        description={t(
+          "Aan de overkant van de haven staat een brievenbus die post uit morgen ontvangt. Deze week ben jij de bezorger. Hoe pak jij het aan?",
+        )}
       >
         <Button
           kind="pale"
@@ -392,31 +420,37 @@ function LettersIntro() {
             stage("letters", { letterIndex: 0, letterAnswers: [] })
           }
         >
-          Open de eerste brief
+          {t("Open de eerste brief")}
         </Button>
       </Plate>
       <section className="guide panel">
-        <h2>Jouw speelstijl</h2>
+        <h2>{t("Jouw speelstijl")}</h2>
         <p>
-          Acht keuzes geven je vier voorkeuren voor je opdrachten. Je kunt ze
-          zelf bijstellen.
+          {t(
+            "Acht keuzes geven je vier voorkeuren voor je opdrachten. Je kunt ze zelf bijstellen.",
+          )}
         </p>
         <Button kind="textbtn" onClick={() => stage("room")}>
-          Ga naar mijn kamer
+          {t("Ga naar mijn kamer")}
         </Button>
       </section>
     </>
   );
 }
 function Tune() {
+  const { t } = useI18n();
   const { player, stage } = useGame();
   return (
     <>
-      <Heading label="Mijn speelstijl" title="Herken jij jezelf hierin?" />
+      <Heading
+        label={t("Mijn speelstijl")}
+        title={t("Herken jij jezelf hierin?")}
+      />
       <section className="formpanel">
         <p>
-          Kies per regel de aanpak die je voor jouw opdrachten wilt gebruiken.
-          Ook een combinatie kan.
+          {t(
+            "Kies per regel de aanpak die je voor jouw opdrachten wilt gebruiken. Ook een combinatie kan.",
+          )}
         </p>
         <form
           onSubmit={(e) => {
@@ -426,23 +460,24 @@ function Tune() {
           }}
         >
           {axes.map((a, i) => (
-            <Field label={a.title} key={a.key}>
+            <Field label={t(a.title)} key={a.key}>
               <select name={a.key} defaultValue={player.journey.prefs[i]}>
                 {[0, 1, 2].map((n) => (
                   <option key={n} value={n}>
-                    {prefLabel(a, n)}
+                    {t(prefLabel(a, n))}
                   </option>
                 ))}
               </select>
             </Field>
           ))}
-          <Button type="submit">Gebruik deze speelstijl</Button>
+          <Button type="submit">{t("Gebruik deze speelstijl")}</Button>
         </form>
       </section>
     </>
   );
 }
 function Room() {
+  const { t } = useI18n();
   const { player, game, navigate, setModal, stage } = useGame(),
     j = player.journey,
     h = houses[j.house],
@@ -451,47 +486,52 @@ function Room() {
     <>
       <Plate
         house={j.house}
-        label={"Huis " + h.name + " · " + player.name}
-        title={h.place}
-        description={h.motto}
+        label={t("Huis {house} · {name}", {
+          house: t(h.name),
+          name: player.name,
+        })}
+        title={t(h.place)}
+        description={t(h.motto)}
       >
         <Button
           kind="pale"
           onClick={() => setModal({ kind: "house", key: j.house })}
         >
-          Bekijk mijn huis
+          {t("Bekijk mijn huis")}
         </Button>
       </Plate>
       <div className="cols">
         <section>
-          <Section title="Mijn volgende stap" />
+          <Section title={t("Mijn volgende stap")} />
           {g ? (
             <article className="guide panel focusCard">
-              <span className="eyebrow">{goalKinds[g.kind].label}</span>
+              <span className="eyebrow">{t(goalKinds[g.kind].label)}</span>
               <h2>{g.text}</h2>
               <p>{g.action}</p>
               {j.prefs && (
                 <p className="note">
-                  {j.prefs[0] === 2 ? axes[0].blend : axes[0].tips[j.prefs[0]]}
+                  {t(
+                    j.prefs[0] === 2 ? axes[0].blend : axes[0].tips[j.prefs[0]],
+                  )}
                 </p>
               )}
               <div className="actions">
                 <Button onClick={() => setModal({ kind: "exercise" })}>
-                  Bekijk mijn oefening
+                  {t("Bekijk mijn oefening")}
                 </Button>
                 <Button kind="textbtn" onClick={() => stage("goals")}>
-                  Mijn doelen
+                  {t("Mijn doelen")}
                 </Button>
               </div>
             </article>
           ) : (
             <Button onClick={() => stage("goal", { editGoal: null })}>
-              Stel een doel in
+              {t("Stel een doel in")}
             </Button>
           )}
-          <Section title="Mijn opdrachten">
+          <Section title={t("Mijn opdrachten")}>
             <Button kind="textbtn" onClick={() => navigate("quests")}>
-              Alle opdrachten
+              {t("Alle opdrachten")}
             </Button>
           </Section>
           <QuestList
@@ -502,52 +542,53 @@ function Room() {
           />
         </section>
         <section>
-          <Section title="Mijn speelstijl" />
+          <Section title={t("Mijn speelstijl")} />
           <div className="guide panel">
             {j.prefs ? (
               <>
                 {axes.map((a, i) => (
                   <div key={a.key} className="prefline">
-                    <span>{a.title}</span>
-                    <b>{prefLabel(a, j.prefs[i])}</b>
+                    <span>{t(a.title)}</span>
+                    <b>{t(prefLabel(a, j.prefs[i]))}</b>
                   </div>
                 ))}
                 <div className="actions">
                   <Button kind="textbtn" onClick={() => stage("tune")}>
-                    Bijstellen
+                    {t("Bijstellen")}
                   </Button>
                   <Button kind="textbtn" onClick={() => stage("letterIntro")}>
                     {j.letterAnswers.length
-                      ? "Brieven opnieuw lezen"
-                      : "Ontdek de brieven"}
+                      ? t("Brieven opnieuw lezen")
+                      : t("Ontdek de brieven")}
                   </Button>
                 </div>
               </>
             ) : (
               <>
-                <h3>De post van morgen</h3>
+                <h3>{t("De post van morgen")}</h3>
                 <p>
-                  Ontdek in acht brieven hoe je het liefst aan een opdracht
-                  begint.
+                  {t(
+                    "Ontdek in acht brieven hoe je het liefst aan een opdracht begint.",
+                  )}
                 </p>
                 <Button kind="textbtn" onClick={() => stage("letterIntro")}>
-                  Open de brievenbus
+                  {t("Open de brievenbus")}
                 </Button>
               </>
             )}
           </div>
-          <Section title="Mijn huis" />
+          <Section title={t("Mijn huis")} />
           <div className="panel guide">
             <div className="identity">
               <Stamp house={j.house} />
               <div>
-                <b>{h.name}</b>
-                <span className="small">{h.verb}</span>
+                <b>{t(h.name)}</b>
+                <span className="small">{t(h.verb)}</span>
               </div>
             </div>
-            <p>{h.memento}</p>
+            <p>{t(h.memento)}</p>
             <Button kind="textbtn" onClick={() => setModal({ kind: "retake" })}>
-              De laagwaterreis herbeleven
+              {t("De laagwaterreis herbeleven")}
             </Button>
           </div>
         </section>
@@ -557,32 +598,38 @@ function Room() {
 }
 
 export function JourneyDialog() {
-  const { modal, setModal, player, stage, game, update } = useGame(),
+  const { t } = useI18n();
+  const { modal, setModal, player, stage, game, mutate } = useGame(),
     close = () => setModal(null);
   if (modal.kind === "house") {
     const h = houses[modal.key];
     return (
-      <Dialog label="Huisgids" title={h.name} close={close}>
+      <Dialog label={t("Huisgids")} title={t(h.name)} close={close}>
         <div className={"houseBanner tile-" + modal.key} />
         <p>
-          <b>{h.place}</b>
+          <b>{t(h.place)}</b>
           <br />
-          {h.motto}
+          {t(h.motto)}
         </p>
-        <p>{h.trait}</p>
-        <div className="detailbox">{h.memento}</div>
+        <p>{t(h.trait)}</p>
+        <div className="detailbox">{t(h.memento)}</div>
       </Dialog>
     );
   }
   if (modal.kind === "retake")
     return (
-      <Dialog label="Laagwaterreis" title="Nog eens uitvaren?" close={close}>
+      <Dialog
+        label={t("Laagwaterreis")}
+        title={t("Nog eens uitvaren?")}
+        close={close}
+      >
         <p>
-          Je kunt opnieuw kiezen. Je doelen en opdrachten neem je mee naar het
-          huis waar je uitkomt.
+          {t(
+            "Je kunt opnieuw kiezen. Je doelen en opdrachten neem je mee naar het huis waar je uitkomt.",
+          )}
         </p>
         <Button onClick={() => stage("story", { answers: [], index: 0 })}>
-          Begin de reis opnieuw
+          {t("Begin de reis opnieuw")}
         </Button>
       </Dialog>
     );
@@ -595,35 +642,19 @@ export function JourneyDialog() {
       (q) =>
         q.playerId === player.id && q.goalId === g.id && q.state === "Open",
     );
-  function accept() {
-    let id;
-    update((d) => {
-      const open = existing(d);
-      if (open) {
-        id = open.id;
-        return;
-      }
-      id = newId();
-      d.quests.push({
-        id,
-        playerId: player.id,
-        goalId: g.id,
-        privateSteps: steps,
-        name: kind.title,
-        desc: kind.step,
-        state: "Open",
-        plus: 10,
-        minus: 2,
-        icon: "flag",
-        style: "",
-      });
-    });
-    setModal({ kind: "quest", id });
+  async function accept() {
+    const response = await mutate("exercise", { id: newId(), goalId: g.id });
+    if (response) setModal({ kind: "quest", id: response.questId });
   }
+
   return (
     <Dialog
-      label={"Oefening uit " + houses[j.house].place.toLowerCase()}
-      title={kind.title}
+      label={t("Oefening uit {place}", {
+        place: t(houses[j.house].place).replace(/^(De|Het|The) /, (article) =>
+          article.toLowerCase(),
+        ),
+      })}
+      title={t(kind.title)}
       close={close}
     >
       <div className="detailbox">
@@ -632,24 +663,27 @@ export function JourneyDialog() {
         {g.action}
       </div>
       <p>
-        <b>Opdracht</b>
+        <b>{t("Opdracht")}</b>
         <br />
-        {kind.step}
+        {t(kind.step)}
       </p>
       <ol className="stepList">
         {steps
           .filter((_, i) => i !== 1)
           .map((s, i) => (
-            <li key={i}>{s}</li>
+            <li key={i}>{exerciseStepText(t, s, i + (i === 0 ? 0 : 1))}</li>
           ))}
       </ol>
-      <p className="note">{houses[j.house].ritual}</p>
+      <p className="note">{t(houses[j.house].ritual)}</p>
       <p className="small">
-        De groep ziet de titel en de score. Je persoonlijke uitwerking zie je in
-        je eigen veldboek.
+        {t(
+          "De groep ziet de titel en de score. Je persoonlijke uitwerking zie je in je eigen veldboek.",
+        )}
       </p>
       <Button onClick={accept}>
-        {existing(game) ? "Open mijn opdracht" : "Neem op in mijn opdrachten"}
+        {existing(game)
+          ? t("Open mijn opdracht")
+          : t("Neem op in mijn opdrachten")}
       </Button>
     </Dialog>
   );

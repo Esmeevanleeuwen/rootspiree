@@ -1,6 +1,8 @@
+import { examples } from "../examples.js";
+import { exampleText, exerciseStepText, questText, useI18n } from "../i18n.jsx";
 import { useState } from "react";
 import { useGame } from "../store.jsx";
-import { emptyJourney, newId, points, typeCode } from "../game.js";
+import { newId, points, typeCode } from "../game.js";
 import { houses } from "../content.js";
 import {
   Avatar,
@@ -15,6 +17,7 @@ import {
 
 const finished = ["Behaald", "Niet behaald"];
 function Status({ value }) {
+  const { t } = useI18n();
   return (
     <span
       className={
@@ -26,11 +29,12 @@ function Status({ value }) {
             : "")
       }
     >
-      {value}
+      {t(value)}
     </span>
   );
 }
 export function QuestList({ items }) {
+  const { t } = useI18n();
   const { game, setModal } = useGame();
   return items.length ? (
     items.map((q) => (
@@ -43,10 +47,15 @@ export function QuestList({ items }) {
           <Icon name={q.icon} />
         </span>
         <span className="body">
-          <strong>{q.name}</strong>
+          <strong>{questText(t, q, "name")}</strong>
           <span className="meta">
-            {game.players.find((p) => p.id === q.playerId).name} · +{q.plus} / −
-            {q.minus} pt
+            {exampleText(
+              t,
+              examples.players,
+              game.players.find((p) => p.id === q.playerId),
+              "name",
+            )}{" "}
+            · +{q.plus} / −{q.minus} pt
           </span>
         </span>
         <span className="badgewrap">
@@ -55,10 +64,11 @@ export function QuestList({ items }) {
       </button>
     ))
   ) : (
-    <div className="empty">Geen opdrachten in deze selectie.</div>
+    <div className="empty">{t("Geen opdrachten in deze selectie.")}</div>
   );
 }
 function Roster({ items }) {
+  const { t } = useI18n();
   const { game, setModal } = useGame();
   return (
     <div className="panel">
@@ -72,8 +82,14 @@ function Roster({ items }) {
           <Avatar player={p} />
           <span className="identity">
             <span>
-              <b>{p.name}</b>
-              <span className="small">{p.npc ? "NPC · Evil" : p.role}</span>
+              <b>{exampleText(t, examples.players, p, "name")}</b>
+              <span className="small">
+                {p.npc
+                  ? t("NPC · Evil")
+                  : p.registered
+                    ? t("Speler")
+                    : exampleText(t, examples.players, p, "role")}
+              </span>
             </span>
           </span>
           <span className="score">
@@ -87,46 +103,47 @@ function Roster({ items }) {
 const ranked = (game) =>
   [...game.players].sort((a, b) => points(game, b) - points(game, a));
 export function Overview() {
+  const { t } = useI18n();
   const { game, navigate, setModal } = useGame();
   const pending = game.quests.filter((q) => q.state === "Ingeleverd");
   return (
     <>
-      <Heading label="Spelleider" title="Speloverzicht">
+      <Heading label={t("Spelleider")} title={t("Speloverzicht")}>
         <Button icon="plus" onClick={() => setModal({ kind: "addQuest" })}>
-          Nieuwe opdracht
+          {t("Nieuwe opdracht")}
         </Button>
       </Heading>
       <section className="hero">
         <span className="tag">
-          <Icon name="book" /> Hoofdstuk I
+          <Icon name="book" /> {t("Hoofdstuk I")}
         </span>
-        <h2 className="chapter">De Luistervallei</h2>
-        <p>Oefen samen met luisteren, doorvragen en ruimte geven.</p>
+        <h2 className="chapter">{t("De Luistervallei")}</h2>
+        <p>{t("Oefen samen met luisteren, doorvragen en ruimte geven.")}</p>
         <Button
           kind="pale"
           icon="book"
           onClick={() => setModal({ kind: "chapter" })}
         >
-          Bekijk het hoofdstuk
+          {t("Bekijk het hoofdstuk")}
         </Button>
       </section>
       <div className="cols">
         <section>
-          <Section title="Te beoordelen">
+          <Section title={t("Te beoordelen")}>
             <Button kind="textbtn" onClick={() => navigate("quests")}>
-              Alle opdrachten
+              {t("Alle opdrachten")}
             </Button>
           </Section>
           {pending.length ? (
             <QuestList items={pending.slice(0, 3)} />
           ) : (
-            <p className="empty">Je hebt alle inzendingen beoordeeld.</p>
+            <p className="empty">{t("Je hebt alle inzendingen beoordeeld.")}</p>
           )}
         </section>
         <section>
-          <Section title="Ranglijst">
+          <Section title={t("Ranglijst")}>
             <Button kind="textbtn" onClick={() => navigate("players")}>
-              Alle spelers
+              {t("Alle spelers")}
             </Button>
           </Section>
           <Roster items={ranked(game).slice(0, 3)} />
@@ -136,6 +153,7 @@ export function Overview() {
   );
 }
 export function QuestPage() {
+  const { t } = useI18n();
   const { game, player, gm, setModal } = useGame();
   const [filter, setFilter] = useState("Alles");
   const items = game.quests.filter(
@@ -149,10 +167,10 @@ export function QuestPage() {
   );
   return (
     <>
-      <Heading label="Spelwereld" title="Opdrachten">
+      <Heading label={t("Spelwereld")} title={t("Opdrachten")}>
         {gm && (
           <Button icon="plus" onClick={() => setModal({ kind: "addQuest" })}>
-            Nieuwe opdracht
+            {t("Nieuwe opdracht")}
           </Button>
         )}
       </Heading>
@@ -174,14 +192,15 @@ export function QuestPage() {
   );
 }
 export function Players() {
+  const { t } = useI18n();
   const { game, gm, setModal } = useGame();
   const [filter, setFilter] = useState("Alles");
   return (
     <>
-      <Heading label="Spelwereld" title="Spelers">
+      <Heading label={t("Spelwereld")} title={t("Spelers")}>
         {gm && (
           <Button icon="plus" onClick={() => setModal({ kind: "addPlayer" })}>
-            Speler toevoegen
+            {t("Personage toevoegen")}
           </Button>
         )}
       </Heading>
@@ -201,13 +220,14 @@ export function Players() {
   );
 }
 export function Feed() {
-  const { game, gm, player, update, setModal } = useGame();
+  const { t } = useI18n();
+  const { game, gm, player, mutate, setModal } = useGame();
   const voter = gm ? "gm" : player.id;
   return (
     <>
-      <Heading label="Community" title="Kampvuur">
+      <Heading label="Community" title={t("Kampvuur")}>
         <Button icon="pen" onClick={() => setModal({ kind: "post" })}>
-          Schrijf iets
+          {t("Schrijf iets")}
         </Button>
       </Heading>
       <div className="single">
@@ -224,21 +244,28 @@ export function Feed() {
               <div className="identity">
                 <Avatar player={author} />
                 <span>
-                  <b>{author.name}</b>
-                  <span className="small">{author.role}</span>
+                  <b>
+                    {post.playerId === "gm"
+                      ? t("Spelleider")
+                      : exampleText(t, examples.players, author, "name")}
+                  </b>
+                  <span className="small">
+                    {post.playerId === "gm"
+                      ? t("Beheerder")
+                      : author.registered
+                        ? t("Speler")
+                        : exampleText(t, examples.players, author, "role")}
+                  </span>
                 </span>
               </div>
-              <p>{post.msg}</p>
+              <p>{exampleText(t, examples.posts, post, "msg")}</p>
               <button
                 className="like"
-                aria-label={"Waardering geven, " + likes + " waarderingen"}
+                aria-label={t("Waardering geven, {count} waarderingen", {
+                  count: likes,
+                })}
                 aria-pressed={!!post.votes[voter]}
-                onClick={() =>
-                  update((d) => {
-                    const votes = d.posts.find((p) => p.id === post.id).votes;
-                    votes[voter] = !votes[voter];
-                  })
-                }
+                onClick={() => mutate("like", { id: post.id })}
               >
                 <Icon name="heart" /> {likes}
               </button>
@@ -250,10 +277,11 @@ export function Feed() {
   );
 }
 function QuestDialog({ quest, close }) {
-  const { game, player, gm, update, setModal } = useGame();
+  const { t } = useI18n();
+  const { game, player, gm, mutate, setModal } = useGame();
   const owner = game.players.find((p) => p.id === quest.playerId);
   const own = !gm && player.id === owner.id;
-  function save(e) {
+  async function save(e) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const review = gm && quest.state === "Ingeleverd";
@@ -265,43 +293,43 @@ function QuestDialog({ quest, close }) {
       return;
     }
     const passed = e.nativeEvent.submitter?.value === "pass";
-    update((d) => {
-      const q = d.quests.find((item) => item.id === quest.id);
-      if (review && q.state === "Ingeleverd")
-        Object.assign(q, {
-          state: passed ? "Behaald" : "Niet behaald",
-          feedback: text,
-        });
-      else if ((own || (gm && owner.npc)) && q.state === "Open")
-        Object.assign(q, { state: "Ingeleverd", evidence: text });
+    const result = await mutate(review ? "review" : "submit", {
+      id: quest.id,
+      text,
+      ...(review ? { passed } : {}),
     });
-    if (review) setModal({ kind: "reviewed", id: quest.id });
+    if (result && review) setModal({ kind: "reviewed", id: quest.id });
   }
   return (
-    <Dialog label="Persoonlijke opdracht" title={quest.name} close={close}>
+    <Dialog
+      label={t("Persoonlijke opdracht")}
+      title={questText(t, quest, "name")}
+      close={close}
+    >
       <div className="identity">
         <Avatar player={owner} />
-        <span>{owner.name}</span>
+        <span>{exampleText(t, examples.players, owner, "name")}</span>
         <Status value={quest.state} />
       </div>
-      <p>{quest.desc}</p>
+      <p>{questText(t, quest, "desc")}</p>
       <div className="detailbox">
-        Behaald <b>+{quest.plus} pt</b> · Niet behaald <b>−{quest.minus} pt</b>
+        {t("Behaald")} <b>+{quest.plus} pt</b> · {t("Niet behaald")}{" "}
+        <b>−{quest.minus} pt</b>
       </div>
       {own && quest.privateSteps && (
         <>
-          <h3>Mijn aanpak</h3>
+          <h3>{t("Mijn aanpak")}</h3>
           <ol className="stepList">
-            {quest.privateSteps.map((t, i) => (
-              <li key={i}>{t}</li>
+            {quest.privateSteps.map((step, i) => (
+              <li key={i}>{exerciseStepText(t, step, i)}</li>
             ))}
           </ol>
         </>
       )}
       {(gm || own) && quest.evidence && (
         <>
-          <h3>Inzending van {owner.name}</h3>
-          <blockquote>{quest.evidence}</blockquote>
+          <h3>{t("Inzending van {name}", { name: owner.name })}</h3>
+          <blockquote>{questText(t, quest, "evidence")}</blockquote>
         </>
       )}
       {(gm || own) && quest.feedback && (
@@ -318,53 +346,63 @@ function QuestDialog({ quest, close }) {
           </Field>
           <div className="actions">
             <Button type="submit" value="pass">
-              Behaald · +{quest.plus} pt
+              {t("Behaald · +{points} pt", { points: quest.plus })}
             </Button>
             <Button kind="warn" type="submit" value="fail">
-              Niet behaald · −{quest.minus} pt
+              {t("Niet behaald · −{points} pt", { points: quest.minus })}
             </Button>
           </div>
         </form>
       )}
       {quest.state === "Open" && (own || (gm && owner.npc)) && (
         <form onSubmit={save}>
-          <Field label="Wat heb je gedaan?">
+          <Field label={t("Wat heb je gedaan?")}>
             <textarea name="text" required maxLength={500} />
           </Field>
-          <Button type="submit">Inleveren</Button>
+          <Button type="submit">{t("Inleveren")}</Button>
         </form>
       )}
     </Dialog>
   );
 }
 function PlayerDialog({ target, close }) {
+  const { t } = useI18n();
   const { gm, player, game, navigate, setModal } = useGame();
   const own = !gm && player.id === target.id,
     j = target.journey;
   return (
-    <Dialog label="Spelersprofiel" title={target.name} close={close}>
+    <Dialog
+      label={t("Spelersprofiel")}
+      title={exampleText(t, examples.players, target, "name")}
+      close={close}
+    >
       <div className="identity">
         <Avatar player={target} large />
         <span>
-          <b>{target.role}</b>
+          <b>
+            {target.registered
+              ? t("Speler")
+              : exampleText(t, examples.players, target, "role")}
+          </b>
           <span className="meta">
-            {target.npc ? "NPC · Evil" : "Speler · Goede kant"}
+            {target.npc ? t("NPC · Evil") : t("Speler · Goede kant")}
           </span>
         </span>
         <span className="score">
           {points(game, target)} <small>pt</small>
         </span>
       </div>
-      <p>{target.desc}</p>
+      <p>{exampleText(t, examples.players, target, "desc")}</p>
       {j.house && (
         <p>
-          <b>Huis {houses[j.house].name}</b> · {houses[j.house].place}
+          <b>{t("Huis {house}", { house: t(houses[j.house].name) })}</b> ·{" "}
+          {t(houses[j.house].place)}
         </p>
       )}
       {own && (
         <Button kind="textbtn" onClick={() => navigate("profile")}>
-          {j.typeScores ? typeCode(j.typeScores) + " · " : ""}Bekijk mijn
-          profiel
+          {j.typeScores ? typeCode(j.typeScores) + " · " : ""}
+          {t("Bekijk mijn profiel")}
         </Button>
       )}
       {j.goals
@@ -376,18 +414,8 @@ function PlayerDialog({ target, close }) {
             {g.action}
           </div>
         ))}
-      {gm && !target.npc && (
-        <Button
-          kind="textbtn"
-          onClick={() =>
-            navigate("home", { mode: "player", playerId: target.id })
-          }
-        >
-          Speel als {target.name}
-        </Button>
-      )}
       <div className="foot">
-        <h3>Persoonlijke opdrachten</h3>
+        <h3>{t("Persoonlijke opdrachten")}</h3>
         <div className="list">
           <QuestList
             items={game.quests.filter((q) => q.playerId === target.id)}
@@ -398,7 +426,7 @@ function PlayerDialog({ target, close }) {
             icon="plus"
             onClick={() => setModal({ kind: "addQuest", id: target.id })}
           >
-            Opdracht toewijzen
+            {t("Opdracht toewijzen")}
           </Button>
         )}
       </div>
@@ -406,101 +434,104 @@ function PlayerDialog({ target, close }) {
   );
 }
 function AddDialog({ kind, id, close }) {
-  const { game, gm, player, update, setModal, navigate } = useGame();
+  const { t } = useI18n();
+  const { game, gm, player, mutate, setModal, navigate } = useGame();
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const post = kind === "post",
     quest = kind === "addQuest";
   if (!gm && !post) return null;
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
+    if (busy) return;
     const f = Object.fromEntries(new FormData(e.currentTarget));
     for (const key of Object.keys(f)) f[key] = f[key].trim();
     if (Object.values(f).some((v) => !v)) {
       setError("Vul alle velden in.");
       return;
     }
+    setError("");
+    setBusy(true);
     const key = newId();
     if (post) {
-      update((d) =>
-        d.posts.unshift({
-          id: key,
-          playerId: gm ? "gm" : player.id,
-          msg: f.msg,
-          likes: 0,
-          votes: {},
-        }),
-      );
-      navigate("feed");
+      if (await mutate("post", { id: key, text: f.msg })) navigate("feed");
     } else if (quest) {
-      update((d) =>
-        d.quests.push({
+      const result = await mutate("quest", {
+        quest: {
           id: key,
           playerId: f.person,
           name: f.title,
           desc: f.desc,
-          plus: +f.plus,
-          minus: +f.minus,
-          state: "Open",
-          icon: "flag",
-          style: "",
-        }),
-      );
-      navigate("quests");
-      setModal({ kind: "quest", id: key });
-    } else {
-      if (
-        game.players.some(
-          (p) =>
-            p.name.toLocaleLowerCase("nl") === f.name.toLocaleLowerCase("nl"),
-        )
-      ) {
-        setError("Deze spelersnaam is al in gebruik.");
-        return;
+          plus: Number(f.plus),
+          minus: Number(f.minus),
+        },
+      });
+      if (result) {
+        navigate("quests");
+        setModal({ kind: "quest", id: key });
       }
-      update((d) =>
-        d.players.push({
+    } else {
+      const result = await mutate("npc", {
+        player: {
           id: key,
           name: f.name,
           role: f.role,
           desc: f.desc,
           av: f.av,
-          base: 0,
-          npc: f.type === "npc",
-          journey: emptyJourney(),
-        }),
-      );
-      navigate("players");
-      setModal({ kind: "player", id: key });
+          npc: true,
+        },
+      });
+      if (result) {
+        navigate("players");
+        setModal({ kind: "player", id: key });
+      }
     }
+    setBusy(false);
   }
   return (
     <Dialog
-      label={post ? "Kampvuur" : "Spelleider"}
+      label={post ? t("Kampvuur") : t("Spelleider")}
       title={
-        post ? "Schrijf iets" : quest ? "Nieuwe opdracht" : "Speler toevoegen"
+        post
+          ? t("Schrijf iets")
+          : quest
+            ? t("Nieuwe opdracht")
+            : t("Personage toevoegen")
       }
       close={close}
     >
       <form onSubmit={submit}>
         {post ? (
-          <Field label={"Bericht als " + (gm ? "Spelleider" : player.name)}>
+          <Field
+            label={t("Bericht als {name}", {
+              name: gm ? t("Spelleider") : player.name,
+            })}
+          >
             <textarea required name="msg" maxLength={600} />
           </Field>
         ) : quest ? (
           <>
-            <Field label="Voor wie?">
-              <select name="person" defaultValue={id || player.id}>
+            <Field label={t("Voor wie?")}>
+              <select
+                name="person"
+                required
+                defaultValue={
+                  id ||
+                  game.players.find((p) => !p.npc)?.id ||
+                  game.players[0]?.id
+                }
+              >
                 {game.players.map((p) => (
                   <option value={p.id} key={p.id}>
-                    {p.name}
+                    {exampleText(t, examples.players, p, "name")}
                   </option>
                 ))}
               </select>
             </Field>
-            <Field label="Titel">
+            <Field label={t("Titel")}>
               <input name="title" maxLength={60} required />
             </Field>
-            <Field label="Wat gaat de speler doen?">
+            <Field label={t("Wat gaat de speler doen?")}>
               <textarea name="desc" maxLength={450} required />
             </Field>
             <div className="pair">
@@ -508,7 +539,7 @@ function AddDialog({ kind, id, close }) {
                 ["plus", "Pluspunten", 10],
                 ["minus", "Minpunten", 2],
               ].map(([name, label, value]) => (
-                <Field key={name} label={label}>
+                <Field key={name} label={t(label)}>
                   <input
                     name={name}
                     type="number"
@@ -523,23 +554,17 @@ function AddDialog({ kind, id, close }) {
           </>
         ) : (
           <>
-            <Field label="Type">
-              <select name="type">
-                <option value="real">Echte speler · Goede kant</option>
-                <option value="npc">Fictieve NPC · Evil</option>
-              </select>
-            </Field>
-            <Field label="Naam">
+            <Field label={t("Naam")}>
               <input name="name" required maxLength={36} />
             </Field>
-            <Field label="Rol">
+            <Field label={t("Rol")}>
               <input name="role" required maxLength={45} />
             </Field>
-            <Field label="Beschrijving">
+            <Field label={t("Beschrijving")}>
               <textarea name="desc" required maxLength={300} />
             </Field>
             <fieldset className="avatar-choice">
-              <legend>Avatar</legend>
+              <legend>{t("Avatar")}</legend>
               <div className="radioRow">
                 {[
                   ["fern", "Blad"],
@@ -555,40 +580,48 @@ function AddDialog({ kind, id, close }) {
                       defaultChecked={i === 0}
                     />
                     <Avatar player={{ av }} />
-                    {label}
+                    {t(label)}
                   </label>
                 ))}
               </div>
             </fieldset>
           </>
         )}
-        {error && <p role="alert">{error}</p>}
-        <Button type="submit">
+        {error && <p role="alert">{t(error)}</p>}
+        <Button type="submit" disabled={busy}>
           {post
-            ? "Plaatsen"
+            ? t("Plaatsen")
             : quest
-              ? "Opdracht toewijzen"
-              : "Speler toevoegen"}
+              ? t("Opdracht toewijzen")
+              : t("Personage toevoegen")}
         </Button>
       </form>
     </Dialog>
   );
 }
 export function CommunityDialog() {
+  const { t } = useI18n();
   const { game, modal, setModal } = useGame();
   const close = () => setModal(null);
   const quest = game.quests.find((q) => q.id === modal.id);
   if (modal.kind === "reviewed") {
     const owner = game.players.find((p) => p.id === quest.playerId);
     return (
-      <Dialog label="Beoordeling vastgelegd" title={quest.state} close={close}>
+      <Dialog
+        label={t("Beoordeling vastgelegd")}
+        title={t(quest.state)}
+        close={close}
+      >
         <p className="delta">
           {quest.state === "Behaald" ? "+" + quest.plus : "−" + quest.minus} pt
         </p>
         <p>
-          {owner.name} heeft nu <b>{points(game, owner)} punten</b>.
+          {t("{name} heeft nu {points} punten.", {
+            name: owner.name,
+            points: points(game, owner),
+          })}
         </p>
-        <Button onClick={close}>Terug naar overzicht</Button>
+        <Button onClick={close}>{t("Terug naar overzicht")}</Button>
       </Dialog>
     );
   }
@@ -603,10 +636,15 @@ export function CommunityDialog() {
     );
   if (modal.kind === "chapter")
     return (
-      <Dialog label="Hoofdstuk I" title="De Luistervallei" close={close}>
+      <Dialog
+        label={t("Hoofdstuk I")}
+        title={t("De Luistervallei")}
+        close={close}
+      >
         <p>
-          In dit hoofdstuk oefenen Nova en Mika met aandacht voor elkaar. Elke
-          opdracht geeft ze één klein gesprek om mee te beginnen.
+          {t(
+            "In dit hoofdstuk oefenen spelers met aandacht voor elkaar. Elke opdracht geeft ze één klein gesprek om mee te beginnen.",
+          )}
         </p>
         <QuestList items={game.quests.slice(0, 3)} />
       </Dialog>

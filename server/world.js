@@ -1,0 +1,567 @@
+import { goalKinds, houses, letters, scenes } from "../src/content.js";
+import { examples } from "../src/examples.js";
+import {
+  currentGoal,
+  emptyJourney,
+  exerciseSteps,
+  houseCandidates,
+  preference,
+} from "../src/game.js";
+import { ApiError } from "./http.js";
+
+const stagesWithHouse = new Set([
+  "reveal",
+  "goal",
+  "goals",
+  "letterIntro",
+  "letters",
+  "tune",
+  "room",
+]);
+const journeyStages = new Set(["welcome", "story", "tie", ...stagesWithHouse]);
+const avatars = new Set(["fern", "sun", "moon", "tide"]);
+const idPattern = /^[a-zA-Z0-9_-]{1,64}$/;
+
+export function setupWorld(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS world_profiles (
+      account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+      bio TEXT NOT NULL DEFAULT '',
+      journey TEXT,
+      type_scores TEXT
+    );
+    CREATE TABLE IF NOT EXISTS world_npcs (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL,
+      avatar TEXT NOT NULL,
+      description TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS world_quests (
+      id TEXT PRIMARY KEY,
+      player_id TEXT NOT NULL,
+      goal_id TEXT,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL,
+      state TEXT NOT NULL CHECK (state IN ('Open', 'Ingeleverd', 'Behaald', 'Niet behaald')),
+      plus INTEGER NOT NULL CHECK (plus BETWEEN 0 AND 999),
+      minus INTEGER NOT NULL CHECK (minus BETWEEN 0 AND 999),
+      evidence TEXT,
+      feedback TEXT,
+      private_steps TEXT
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS world_open_exercise
+      ON world_quests (player_id, goal_id) WHERE state = 'Open' AND goal_id IS NOT NULL;
+    CREATE TABLE IF NOT EXISTS world_posts (
+      id TEXT PRIMARY KEY,
+      player_id TEXT NOT NULL,
+      message TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS world_votes (
+      post_id TEXT NOT NULL REFERENCES world_posts(id) ON DELETE CASCADE,
+      account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      PRIMARY KEY (post_id, account_id)
+    );
+  `);
+  const npc = examples.players.find((player) => player.npc);
+  db.prepare(
+    `
+    INSERT OR IGNORE INTO world_npcs (id, name, role, avatar, description)
+    VALUES (?, ?, ?, ?, ?)
+  `,
+  ).run(npc.id, npc.name, npc.role, npc.av, npc.desc);
+}
+
+function requireInput(valid) {
+  if (!valid) throw new ApiError(400, "invalid_input");
+}
+
+function requireAdmin(account) {
+  if (account.role !== "admin") throw new ApiError(403, "forbidden");
+}
+
+function requirePlayer(account) {
+  if (account.role !== "player") throw new ApiError(403, "forbidden");
+}
+
+function record(value) {
+  requireInput(value && typeof value === "object" && !Array.isArray(value));
+  return value;
+}
+
+function id(value) {
+  requireInput(typeof value === "string" && idPattern.test(value));
+  return value;
+}
+
+function shortText(value, limit, optional = false) {
+  requireInput(typeof value === "string");
+  const text = value.trim();
+  requireInput(text.length <= limit && (optional || text.length > 0));
+  return text;
+}
+
+function integer(value, min, max) {
+  requireInput(Number.isInteger(value) && value >= min && value <= max);
+  return value;
+}
+
+function validatedGoal(value) {
+  const goal = record(value);
+  requireInput(
+    typeof goal.kind === "string" && Object.hasOwn(goalKinds, goal.kind),
+  );
+  requireInput(typeof goal.shared === "boolean");
+  return {
+    id: id(goal.id),
+    kind: goal.kind,
+    shared: goal.shared,
+    text: shortText(goal.text, 220),
+    situation: shortText(goal.situation, 150, true),
+    action: shortText(goal.action, 170),
+    sign: shortText(goal.sign, 170),
+  };
+}
+
+function validatedJourney(value) {
+  const journey = record(value);
+  const { stage, house, activeGoal, editGoal } = journey;
+  requireInput(journeyStages.has(stage));
+  requireInput(Array.isArray(journey.goals) && journey.goals.length <= 30);
+  const goals = journey.goals.map(validatedGoal);
+  const goalIds = new Set(goals.map((goal) => goal.id));
+  requireInput(goalIds.size === goals.length);
+  requireInput(activeGoal === null || goalIds.has(activeGoal));
+  requireInput(editGoal === null || goalIds.has(editGoal));
+  requireInput(
+    house === null ||
+      (typeof house === "string" && Object.hasOwn(houses, house)),
+  );
+  requireInput(!stagesWithHouse.has(stage) || house !== null);
+
+  const { answers, letterAnswers, prefs } = journey;
+  requireInput(Array.isArray(answers) && answers.length <= scenes.length);
+  requireInput(
+    answers.every(
+      (answer, index) =>
+        typeof answer === "string" &&
+        scenes[index].opts.some(([key]) => key === answer),
+    ),
+  );
+  requireInput(
+    Array.isArray(letterAnswers) && letterAnswers.length <= letters.length,
+  );
+  requireInput(letterAnswers.every((answer) => answer === 0 || answer === 1));
+  requireInput(
+    prefs === null ||
+      (Array.isArray(prefs) &&
+        prefs.length === 4 &&
+        prefs.every(
+          (answer) => Number.isInteger(answer) && answer >= 0 && answer <= 2,
+        )),
+  );
+  if (stage === "tie" || stage === "reveal") {
+    requireInput(answers.length === scenes.length);
+    const candidates = houseCandidates(answers);
+    requireInput(
+      stage === "tie" ? candidates.length > 1 : candidates.includes(house),
+    );
+  }
+
+  const index = integer(journey.index, 0, scenes.length - 1);
+  const letterIndex = integer(journey.letterIndex, 0, letters.length - 1);
+  requireInput(stage !== "story" || index <= answers.length);
+  requireInput(stage !== "letters" || letterIndex <= letterAnswers.length);
+  return {
+    stage,
+    house,
+    activeGoal,
+    editGoal,
+    goals,
+    answers,
+    letterAnswers,
+    prefs,
+    index,
+    letterIndex,
+  };
+}
+
+function ownJourney(row, typeScores) {
+  const journey = {
+    ...emptyJourney(),
+    ...JSON.parse(row?.journey ?? "null"),
+    typeScores,
+  };
+  if (
+    row?.type_scores !== JSON.stringify(typeScores) ||
+    journey.prefs === null
+  ) {
+    journey.prefs = typeScores?.map(preference) ?? null;
+  }
+  return journey;
+}
+
+function readPlayers(db, account) {
+  const users = db
+    .prepare(
+      `
+    SELECT accounts.id, accounts.name, p.bio, p.journey, p.type_scores
+    FROM accounts
+    LEFT JOIN world_profiles p ON p.account_id = accounts.id
+    WHERE accounts.role = 'player' AND accounts.onboarding_complete = 1
+    ORDER BY accounts.created_at, accounts.id
+  `,
+    )
+    .all();
+  const players = users.map((row) => {
+    let journey;
+    if (row.id === account.id) {
+      journey = ownJourney(row, account.typeScores);
+    } else {
+      const stored = JSON.parse(row.journey ?? "null");
+      const shared =
+        account.role === "admin"
+          ? stored?.goals.filter((goal) => goal.shared)
+          : [];
+      journey = {
+        house: stored?.house ?? null,
+        goals: (shared ?? []).map(({ id, text, action, shared }) => ({
+          id,
+          text,
+          action,
+          shared,
+        })),
+      };
+    }
+    return {
+      id: row.id,
+      name: row.name,
+      role: "Speler",
+      av: "fern",
+      base: 0,
+      desc: row.bio ?? "",
+      registered: true,
+      journey,
+    };
+  });
+  const npcs = db
+    .prepare(
+      `
+    SELECT id, name, role, avatar AS av, description AS desc FROM world_npcs ORDER BY rowid
+  `,
+    )
+    .all();
+  return [
+    ...players,
+    ...npcs.map((npc) => ({
+      ...npc,
+      npc: true,
+      base: 0,
+      journey: { goals: [] },
+    })),
+  ];
+}
+
+function readGame(db, account) {
+  const players = readPlayers(db, account);
+  const roster = new Set(players.map((player) => player.id));
+  const quests = db
+    .prepare("SELECT * FROM world_quests ORDER BY rowid")
+    .all()
+    .filter((row) => roster.has(row.player_id))
+    .map((row) => {
+      const own = row.player_id === account.id;
+      const canReadSubmission = own || account.role === "admin";
+      return {
+        id: row.id,
+        playerId: row.player_id,
+        name: row.name,
+        state: row.state,
+        plus: row.plus,
+        minus: row.minus,
+        icon: "flag",
+        style: "",
+        ...(own && row.goal_id && { goalId: row.goal_id }),
+        ...(own &&
+          row.private_steps && { privateSteps: JSON.parse(row.private_steps) }),
+        ...(canReadSubmission && {
+          desc: row.description,
+          evidence: row.evidence,
+          feedback: row.feedback,
+        }),
+      };
+    });
+  const voter = account.role === "admin" ? "gm" : account.id;
+  const posts = db
+    .prepare(
+      `
+    SELECT p.id, p.player_id, p.message, count(v.account_id) AS total,
+      coalesce(max(v.account_id = ?), 0) AS voted
+    FROM world_posts p LEFT JOIN world_votes v ON v.post_id = p.id
+    GROUP BY p.id ORDER BY p.rowid DESC
+  `,
+    )
+    .all(account.id)
+    .map((row) => ({
+      id: row.id,
+      playerId: row.player_id,
+      msg: row.message,
+      likes: row.total - row.voted,
+      votes: row.voted ? { [voter]: true } : {},
+    }));
+  return { players, quests, posts };
+}
+
+function questOwnerExists(db, owner) {
+  return Boolean(
+    db
+      .prepare(
+        `
+    SELECT id FROM accounts WHERE id = ? AND role = 'player' AND onboarding_complete = 1
+    UNION ALL SELECT id FROM world_npcs WHERE id = ?
+  `,
+      )
+      .get(owner, owner),
+  );
+}
+
+function ensureFound(row) {
+  if (!row) throw new ApiError(404, "not_found");
+  return row;
+}
+
+function ensureChanged(result) {
+  if (!result.changes) throw new ApiError(409, "conflict");
+}
+
+function saveProfile(db, account, body) {
+  requirePlayer(account);
+  const bio = shortText(body.bio, 300, true);
+  db.prepare(
+    `
+    INSERT INTO world_profiles (account_id, bio) VALUES (?, ?)
+    ON CONFLICT(account_id) DO UPDATE SET bio = excluded.bio
+  `,
+  ).run(account.id, bio);
+}
+
+function saveJourney(db, account, body) {
+  requirePlayer(account);
+  const journey = validatedJourney(body.journey);
+  db.prepare(
+    `
+    INSERT INTO world_profiles (account_id, journey, type_scores) VALUES (?, ?, ?)
+    ON CONFLICT(account_id) DO UPDATE SET journey = excluded.journey, type_scores = excluded.type_scores
+  `,
+  ).run(
+    account.id,
+    JSON.stringify(journey),
+    JSON.stringify(account.typeScores),
+  );
+}
+
+function toggleVote(db, account, body) {
+  const postId = id(body.id);
+  ensureFound(
+    db.prepare("SELECT id FROM world_posts WHERE id = ?").get(postId),
+  );
+  const removed = db
+    .prepare("DELETE FROM world_votes WHERE post_id = ? AND account_id = ?")
+    .run(postId, account.id);
+  if (!removed.changes) {
+    db.prepare(
+      "INSERT INTO world_votes (post_id, account_id) VALUES (?, ?)",
+    ).run(postId, account.id);
+  }
+}
+
+function addPost(db, account, body) {
+  const postId = id(body.id);
+  const actor = account.role === "admin" ? "gm" : account.id;
+  const message = shortText(body.text, 600);
+  ensureChanged(
+    db
+      .prepare(
+        `
+    INSERT INTO world_posts (id, player_id, message) VALUES (?, ?, ?)
+    ON CONFLICT(id) DO NOTHING
+  `,
+      )
+      .run(postId, actor, message),
+  );
+}
+
+function addQuest(db, account, body) {
+  requireAdmin(account);
+  const quest = record(body.quest);
+  const owner = id(quest.playerId);
+  ensureFound(questOwnerExists(db, owner));
+  ensureChanged(
+    db
+      .prepare(
+        `
+    INSERT INTO world_quests (id, player_id, name, description, state, plus, minus)
+    VALUES (?, ?, ?, ?, 'Open', ?, ?) ON CONFLICT(id) DO NOTHING
+  `,
+      )
+      .run(
+        id(quest.id),
+        owner,
+        shortText(quest.name, 60),
+        shortText(quest.desc, 450),
+        integer(quest.plus, 0, 999),
+        integer(quest.minus, 0, 999),
+      ),
+  );
+}
+
+function submitQuest(db, account, body) {
+  const questId = id(body.id);
+  const quest = ensureFound(
+    db.prepare("SELECT player_id FROM world_quests WHERE id = ?").get(questId),
+  );
+  const npcSubmission =
+    account.role === "admin" &&
+    db.prepare("SELECT id FROM world_npcs WHERE id = ?").get(quest.player_id);
+  if (quest.player_id !== account.id && !npcSubmission)
+    throw new ApiError(403, "forbidden");
+  ensureChanged(
+    db
+      .prepare(
+        `
+    UPDATE world_quests SET state = 'Ingeleverd', evidence = ? WHERE id = ? AND state = 'Open'
+  `,
+      )
+      .run(shortText(body.text, 500), questId),
+  );
+}
+
+function reviewQuest(db, account, body) {
+  requireAdmin(account);
+  const questId = id(body.id);
+  ensureFound(
+    db.prepare("SELECT id FROM world_quests WHERE id = ?").get(questId),
+  );
+  requireInput(typeof body.passed === "boolean");
+  ensureChanged(
+    db
+      .prepare(
+        `
+    UPDATE world_quests SET state = ?, feedback = ? WHERE id = ? AND state = 'Ingeleverd'
+  `,
+      )
+      .run(
+        body.passed ? "Behaald" : "Niet behaald",
+        shortText(body.text, 400),
+        questId,
+      ),
+  );
+}
+
+function addNpc(db, account, body) {
+  requireAdmin(account);
+  const npc = record(body.player);
+  const npcId = id(npc.id);
+  requireInput(npcId !== "gm" && npc.npc === true && avatars.has(npc.av));
+  requireInput(!db.prepare("SELECT id FROM accounts WHERE id = ?").get(npcId));
+  ensureChanged(
+    db
+      .prepare(
+        `
+    INSERT INTO world_npcs (id, name, role, avatar, description) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO NOTHING
+  `,
+      )
+      .run(
+        npcId,
+        shortText(npc.name, 36),
+        shortText(npc.role, 45),
+        npc.av,
+        shortText(npc.desc, 300),
+      ),
+  );
+}
+
+function addExercise(db, account, body) {
+  requirePlayer(account);
+  const questId = id(body.id);
+  const goalId = id(body.goalId);
+  const stored = db
+    .prepare(
+      "SELECT journey, type_scores FROM world_profiles WHERE account_id = ?",
+    )
+    .get(account.id);
+  const journey = ownJourney(stored, account.typeScores);
+  const goal = ensureFound(currentGoal(journey));
+  if (goal.id !== goalId) throw new ApiError(409, "conflict");
+  const opened = db
+    .prepare(
+      `
+    SELECT id FROM world_quests WHERE state = 'Open' AND player_id = ? AND goal_id = ?
+  `,
+    )
+    .get(account.id, goalId);
+  if (opened) return opened.id;
+
+  const kind = goalKinds[goal.kind];
+  ensureChanged(
+    db
+      .prepare(
+        `
+    INSERT INTO world_quests (
+      id, player_id, goal_id, name, description, state, plus, minus, private_steps
+    ) VALUES (?, ?, ?, ?, ?, 'Open', 10, 2, ?) ON CONFLICT(id) DO NOTHING
+  `,
+      )
+      .run(
+        questId,
+        account.id,
+        goalId,
+        kind.title,
+        kind.step,
+        JSON.stringify(exerciseSteps(journey, goal)),
+      ),
+  );
+  return questId;
+}
+
+const actions = new Map([
+  ["bio", saveProfile],
+  ["journey", saveJourney],
+  ["like", toggleVote],
+  ["post", addPost],
+  ["quest", addQuest],
+  ["submit", submitQuest],
+  ["review", reviewQuest],
+  ["npc", addNpc],
+  ["exercise", addExercise],
+]);
+
+export function handleWorld({ req, account, db, body, send, path }) {
+  if (path !== "/api/world") return false;
+  if (!account) throw new ApiError(401, "unauthenticated");
+  if (account.role === "player" && !account.onboardingComplete) {
+    throw new ApiError(403, "onboarding_required");
+  }
+  const writing = req.method === "POST";
+  if (!writing && req.method !== "GET")
+    throw new ApiError(405, "method_not_allowed");
+
+  db.exec(writing ? "BEGIN IMMEDIATE" : "BEGIN");
+  let response;
+  try {
+    let questId;
+    if (writing) {
+      const action = actions.get(record(body).action);
+      if (!action) throw new ApiError(400, "invalid_input");
+      questId = action(db, account, body);
+    }
+    response = { game: readGame(db, account), ...(questId && { questId }) };
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+  send(200, response);
+  return true;
+}

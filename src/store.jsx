@@ -1,128 +1,146 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { statements } from "./content.js";
-import { initialGame } from "./game.js";
+import { emptyJourney } from "./game.js";
+import { api } from "./api.js";
 
 const GameContext = createContext(null);
-const gameKey = "rootspiree.world.v1";
-const viewKey = "rootspiree.view.v1";
+const defaultView = { page: "home", test: null };
 
-function readStored(storageName, key) {
-  try {
-    return JSON.parse(window[storageName].getItem(key));
-  } catch {
-    return null;
-  }
-}
-function writeStored(storageName, key, value) {
-  try {
-    if (value == null) window[storageName].removeItem(key);
-    else window[storageName].setItem(key, JSON.stringify(value));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-const defaultView = {
-  page: "home",
-  playerId: "nova",
-  mode: "player",
-  test: null,
-};
-export function GameProvider({ children }) {
-  const [game, setGame] = useState(
-    () => readStored("localStorage", gameKey) || initialGame(),
-  );
-  const [view, setView] = useState(() => {
-    const saved = readStored("sessionStorage", viewKey);
-    return saved && game.players.some((p) => p.id === saved.playerId && !p.npc)
-      ? { ...defaultView, ...saved }
-      : defaultView;
-  });
+export function GameProvider({ account, onAccount, onExpired, children }) {
+  const [game, setGame] = useState(null);
+  const [view, setView] = useState(defaultView);
   const [modal, setModal] = useState(null);
   const [warning, setWarning] = useState("");
-  const latest = useRef(game);
-  const memoryOnly = useRef(false);
-  const player =
-    game.players.find((p) => p.id === view.playerId) || game.players[0];
-  function update(change) {
-    const fresh = memoryOnly.current
-      ? latest.current
-      : readStored("localStorage", gameKey) || latest.current;
-    const next = structuredClone(fresh);
-    change(next);
-    const saved = writeStored("localStorage", gameKey, next);
-    memoryOnly.current = !saved;
-    setWarning(
-      saved
-        ? ""
-        : "Opslaan in deze browser lukt niet. Je kunt deze sessie verder spelen.",
-    );
-    latest.current = next;
-    setGame(next);
+  const latest = useRef(null);
+  const actions = useRef(Promise.resolve());
+  const mounted = useRef(false);
+  const gm = account.role === "admin";
+  const player = gm
+    ? { id: account.id, name: account.name, journey: emptyJourney() }
+    : game?.players.find((p) => p.id === account.id);
+
+  function loadState(response) {
+    if (!mounted.current) return;
+    latest.current = response.game;
+    setGame(response.game);
+    setWarning("");
   }
+
+  function report(error) {
+    if (!mounted.current) return;
+    if (error.status === 401) onExpired();
+    else setWarning(error.message || "server_error");
+  }
+
+  function refresh() {
+    return enqueue(async () => loadState(await api("/world")));
+  }
+
   useEffect(() => {
-    const sync = (e) => {
-      if (e.key !== gameKey || !e.newValue) return;
-      const fresh = readStored("localStorage", gameKey);
-      if (fresh) {
-        latest.current = fresh;
-        setGame(fresh);
-      }
+    mounted.current = true;
+    refresh();
+    const check = () => {
+      if (document.visibilityState !== "hidden") refresh();
     };
-    window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
+    const timer = setInterval(check, 20000);
+    window.addEventListener("focus", check);
+    return () => {
+      mounted.current = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", check);
+    };
   }, []);
-  useEffect(() => {
-    writeStored("sessionStorage", viewKey, view);
-  }, [view]);
-  const navigate = (page, overrides = {}) => {
-    setModal(null);
-    setView((v) => ({ ...v, test: null, page, ...overrides }));
-  };
-  function editJourney(change) {
-    update((d) => change(d.players.find((p) => p.id === player.id).journey));
+
+  function enqueue(work) {
+    const task = actions.current.then(async () => {
+      if (!mounted.current) return null;
+      try {
+        return await work();
+      } catch (error) {
+        report(error);
+        return null;
+      }
+    });
+    actions.current = task;
+    return task;
   }
-  const stage = (name, patch = {}) => {
-    editJourney((j) => Object.assign(j, patch, { stage: name }));
-    navigate("home");
-  };
-  function startTest(fresh = false) {
-    navigate("test", {
-      mode: "player",
-      test: {
-        fresh,
-        step: fresh ? -1 : 0,
-        name: "",
-        bio: "",
-        answers: Array(statements.length).fill(null),
-      },
+
+  async function saveWorld(action, data) {
+    const response = await api("/world", {
+      method: "POST",
+      data: { action, ...data },
+    });
+    loadState(response);
+    return response;
+  }
+
+  const mutate = (action, data) => enqueue(() => saveWorld(action, data));
+  function navigate(page, overrides = {}) {
+    setModal(null);
+    setView({ ...defaultView, page, ...overrides });
+  }
+
+  function editJourney(change) {
+    return enqueue(() => {
+      const journey = structuredClone(
+        latest.current.players.find((p) => p.id === account.id).journey,
+      );
+      change(journey);
+      return saveWorld("journey", { journey });
     });
   }
-  const changeTest = (patch) =>
-    setView((v) => ({ ...v, test: { ...v.test, ...patch } }));
+
+  async function stage(name, patch = {}) {
+    const response = await editJourney((journey) =>
+      Object.assign(journey, patch, { stage: name }),
+    );
+    if (response && mounted.current) navigate("home");
+  }
+
+  function startTest() {
+    navigate("test", {
+      test: { answers: Array(statements.length).fill(null) },
+    });
+  }
+
+  function retake(answers) {
+    return enqueue(async () => {
+      const response = await api("/onboarding", {
+        method: "POST",
+        data: { answers },
+      });
+      const fresh = await api("/world");
+      loadState(fresh);
+      onAccount(response.account);
+      return response;
+    });
+  }
+
   return (
     <GameContext.Provider
       value={{
+        account,
         game,
         player,
         view,
-        gm: view.mode === "gm",
+        gm,
         modal,
         warning,
         setModal,
-        update,
+        mutate,
         editJourney,
         stage,
         navigate,
         startTest,
-        changeTest,
+        retake,
+        refresh,
       }}
     >
       {children}
     </GameContext.Provider>
   );
 }
+
 export function useGame() {
   return useContext(GameContext);
 }

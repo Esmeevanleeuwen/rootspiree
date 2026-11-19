@@ -1,4 +1,6 @@
+import { useI18n } from "../i18n.jsx";
 import { useEffect, useRef } from "react";
+import { useGame } from "../store.jsx";
 import { paths } from "../icons.js";
 import { houses } from "../content.js";
 
@@ -80,6 +82,8 @@ export function Plate({
   );
 }
 export function Dialog({ label, title, close, children }) {
+  const { warning } = useGame() || {};
+  const { t } = useI18n();
   const ref = useRef(null);
   useEffect(() => {
     const dialog = ref.current;
@@ -100,9 +104,12 @@ export function Dialog({ label, title, close, children }) {
       <div className="dialogin">
         <div className="minihead">
           <span className="eyebrow">{label}</span>
-          <Button kind="x" aria-label="Sluiten" icon="x" onClick={close} />
+          <Button kind="x" aria-label={t("Sluiten")} icon="x" onClick={close} />
         </div>
         <h2 id="dialogTitle">{title}</h2>
+        {warning && (
+          <p role="alert">{t("Deze wijziging kon niet worden opgeslagen.")}</p>
+        )}
         {children}
       </div>
     </dialog>
@@ -117,6 +124,7 @@ export function Field({ label, children }) {
   );
 }
 export function Chips({ items, value, onChange }) {
+  const { t } = useI18n();
   return (
     <div className="filter">
       {items.map((item) => (
@@ -126,7 +134,7 @@ export function Chips({ items, value, onChange }) {
           className={"chip " + (value === item ? "on" : "")}
           onClick={() => onChange(item)}
         >
-          {item}
+          {t(item)}
         </button>
       ))}
     </div>
