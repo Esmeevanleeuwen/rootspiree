@@ -193,7 +193,66 @@ export const addedStatements = [
     "Ingewikkelde en vernieuwende ideeën spreken je meer aan dan eenvoudige, duidelijke ideeën.",
     "Complex and novel ideas excite you more than simple and straightforward ones.",
   ],
-  // The supplied list resumes at statement 55.
+  [
+    "E",
+    "Je legt gemakkelijk contact met mensen die je net hebt ontmoet.",
+    "You can easily connect with people you have just met.",
+  ],
+  [
+    "J",
+    "Als je plannen worden verstoord, wil je vooral zo snel mogelijk weer op schema komen.",
+    "If your plans are interrupted, your top priority is to get back on track as soon as possible.",
+  ],
+  [
+    "U",
+    "Je hebt nog steeds last van fouten die je lang geleden hebt gemaakt.",
+    "You are still bothered by mistakes that you made a long time ago.",
+  ],
+  [
+    "S",
+    "Je praat niet zo graag over theorieën over hoe de wereld er in de toekomst uit kan zien.",
+    "You are not too interested in discussing theories on what the world could look like in the future.",
+  ],
+  [
+    "U",
+    "Je emoties sturen jou meer dan jij je emoties kunt sturen.",
+    "Your emotions control you more than you control them.",
+  ],
+  [
+    "F",
+    "Bij beslissingen let je meer op hoe de betrokken mensen zich kunnen voelen dan op wat het meest logisch of efficiënt is.",
+    "When making decisions, you focus more on how the affected people might feel than on what is most logical or efficient.",
+  ],
+  [
+    "P",
+    "Je werkt vaker in spontane vlagen van energie dan op een georganiseerde en regelmatige manier.",
+    "Your personal work style is closer to spontaneous bursts of energy than organized and consistent efforts.",
+  ],
+  [
+    "U",
+    "Als iemand een hoge dunk van je heeft, vraag je je af hoelang het duurt voordat diegene teleurgesteld in je raakt.",
+    "When someone thinks highly of you, you wonder how long it will take them to feel disappointed in you.",
+  ],
+  [
+    "I",
+    "Je zou graag werk doen waarbij je het grootste deel van de tijd alleen werkt.",
+    "You would love a job that requires you to work alone most of the time.",
+  ],
+  [
+    "S",
+    "Je vindt het tijdverspilling om over abstracte filosofische vragen na te denken.",
+    "You believe that pondering abstract philosophical questions is a waste of time.",
+  ],
+  [
+    "E",
+    "Je voelt je meer aangetrokken tot drukke, levendige omgevingen dan tot rustige, intieme plekken.",
+    "You feel more drawn to busy, bustling atmospheres than to quiet, intimate places.",
+  ],
+  [
+    "F",
+    "Als een beslissing goed voelt, handel je er vaak naar zonder verder bewijs nodig te hebben.",
+    "If a decision feels right to you, you often act on it without needing further proof.",
+  ],
   [
     "U",
     "Zelfs een kleine fout kan je doen twijfelen aan alles wat je weet en kunt.",

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { agreement, quizScoreLimit, statements } from "../src/content.js";
+import { addedStatements } from "../src/personality-questions.js";
 import {
   houseCandidates,
   initialGame,
@@ -10,6 +11,25 @@ import {
   typeCode,
   typePreferences,
 } from "../src/game.js";
+
+test("de zestig aangeleverde vragen staan in volgorde en komen één keer voor", () => {
+  const english = addedStatements.map(([, , sentence]) => sentence);
+  assert.equal(statements.length, 76);
+  assert.equal(english.length, 60);
+  assert.equal(new Set(english).size, 60);
+  assert.equal(
+    english[42],
+    "You can easily connect with people you have just met.",
+  );
+  assert.equal(
+    english[53],
+    "If a decision feels right to you, you often act on it without needing further proof.",
+  );
+  assert.equal(
+    english[54],
+    "Even a small mistake can cause you to doubt your overall abilities and knowledge.",
+  );
+});
 
 test("alle zestien typen en neutrale uitkomsten worden correct berekend", () => {
   for (const e of "EI")

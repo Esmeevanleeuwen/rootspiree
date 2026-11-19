@@ -118,6 +118,9 @@ const errors = {
 const profileFields = ["hobbies", "job", "goals", "interests"];
 const pageSize = 6;
 const pageCount = Math.ceil(statements.length / pageSize);
+const previousQuizLength = originalQuizLength + 48;
+// The previous draft jumps from supplied statement 42 to 55.
+const previousQuizGapIndex = originalQuizLength + 42;
 
 export function LanguageSelector({ language, setLanguage }) {
   const strings = copy[language];
@@ -496,7 +499,9 @@ function loadQuizDraft(accountId) {
   const draft = readEntryDraft("quiz", accountId);
   if (
     !Array.isArray(draft?.answers) ||
-    ![originalQuizLength, statements.length].includes(draft.answers.length) ||
+    ![originalQuizLength, previousQuizLength, statements.length].includes(
+      draft.answers.length,
+    ) ||
     draft.answers.some(
       (answer) =>
         answer !== null &&
@@ -505,9 +510,16 @@ function loadQuizDraft(accountId) {
   )
     return empty;
 
-  if (draft.answers.length === originalQuizLength) {
-    const answers = empty.answers;
-    answers.splice(0, originalQuizLength, ...draft.answers);
+  if (draft.answers.length !== statements.length) {
+    const insertionIndex =
+      draft.answers.length === originalQuizLength
+        ? originalQuizLength
+        : previousQuizGapIndex;
+    const answers = [
+      ...draft.answers.slice(0, insertionIndex),
+      ...Array(statements.length - draft.answers.length).fill(null),
+      ...draft.answers.slice(insertionIndex),
+    ];
     return { answers, page: Math.floor(answers.indexOf(null) / pageSize) };
   }
   if (

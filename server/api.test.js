@@ -124,12 +124,14 @@ test("separate player and admin accounts, ordered onboarding, sessions across re
   });
   assert.equal(response.data.account.profileComplete, true);
   assert.deepEqual(response.data.account.profile, profile);
-  response = await req("onboarding", {
-    method: "POST",
-    cookie,
-    body: { answers: Array(16).fill(3) },
-  });
-  assert.equal(response.data.error, "invalid_answers");
+  for (const previousLength of [16, 64]) {
+    response = await req("onboarding", {
+      method: "POST",
+      cookie,
+      body: { answers: Array(previousLength).fill(3) },
+    });
+    assert.equal(response.data.error, "invalid_answers");
+  }
   response = await req("onboarding", {
     method: "POST",
     cookie,
