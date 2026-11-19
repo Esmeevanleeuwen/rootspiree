@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { examples } from "../examples.js";
 import { newId } from "../game.js";
 import { exampleText, questText, useI18n } from "../i18n.jsx";
@@ -35,6 +35,16 @@ const copy = {
     assignTo: (name) => "Assign to " + name,
     save: "Save draft",
     saved: "Draft saved",
+    saving: "Saving draft…",
+    assigning: "Assigning quest…",
+    deleting: "Deleting draft…",
+    localEdits: "Unsaved edits are kept in this tab.",
+    discard: "Discard edits",
+    draftChanged:
+      "The saved draft has changed. Choose which version to continue with.",
+    reviewUpdatedDraft: "Review the updated draft before trying again.",
+    useSaved: "Use saved version",
+    keepEdits: "Keep my edits",
     remove: "Delete draft",
     confirmRemove: "Delete this quest draft?",
     confirmBack: "Discard your unsaved changes?",
@@ -81,9 +91,20 @@ const copy = {
     assignTo: (name) => "Toewijzen aan " + name,
     save: "Concept opslaan",
     saved: "Concept opgeslagen",
+    saving: "Concept wordt opgeslagen…",
+    assigning: "Opdracht wordt toegewezen…",
+    deleting: "Concept wordt verwijderd…",
+    localEdits: "Je wijzigingen worden in dit tabblad bewaard.",
+    discard: "Wijzigingen verwijderen",
+    draftChanged:
+      "Het opgeslagen concept is gewijzigd. Kies met welke versie je verdergaat.",
+    reviewUpdatedDraft:
+      "Bekijk het bijgewerkte concept en probeer het opnieuw.",
+    useSaved: "Gebruik opgeslagen versie",
+    keepEdits: "Behoud mijn wijzigingen",
     remove: "Concept verwijderen",
     confirmRemove: "Dit concept verwijderen?",
-    confirmBack: "Je wijzigingen zonder opslaan sluiten?",
+    confirmBack: "Je wijzigingen verwijderen?",
     missingPlayer: "Kies de speler die deze opdracht krijgt.",
     missingTitle: "Vul een titel in.",
     missingAction: "Beschrijf wat de speler moet proberen.",
@@ -101,9 +122,9 @@ const copy = {
   },
 };
 
-function initialForm(draft, playerId, sharedGoalId) {
+function initialForm(draft, playerId, sharedGoalId, id) {
   return {
-    id: draft?.id ?? newId(),
+    id: draft?.id ?? id ?? newId(),
     playerId: draft ? (draft.playerId ?? "") : (playerId ?? ""),
     sharedGoalId: draft ? (draft.sharedGoalId ?? "") : (sharedGoalId ?? ""),
     name: draft?.name ?? "",
@@ -113,6 +134,53 @@ function initialForm(draft, playerId, sharedGoalId) {
     plus: String(draft?.plus ?? 10),
     minus: String(draft?.minus ?? 2),
   };
+}
+
+const editorFields = [
+  "id",
+  "playerId",
+  "sharedGoalId",
+  "name",
+  "desc",
+  "submissionPrompt",
+  "completionCriteria",
+  "plus",
+  "minus",
+];
+
+function sameForm(first, second) {
+  return editorFields.every((key) => first[key] === second[key]);
+}
+
+function readEdits(key, draftId) {
+  try {
+    const edits = JSON.parse(sessionStorage.getItem(key));
+    if (
+      !edits ||
+      !["form", "baseline"].every((part) =>
+        editorFields.every((field) => typeof edits[part]?.[field] === "string"),
+      )
+    )
+      return null;
+    if (
+      edits.form.id !== edits.baseline.id ||
+      (draftId && edits.form.id !== draftId)
+    )
+      return null;
+    return edits;
+  } catch {
+    return null;
+  }
+}
+
+function writeEdits(key, edits) {
+  try {
+    if (edits) sessionStorage.setItem(key, JSON.stringify(edits));
+    else sessionStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isValidPoints(value) {
@@ -125,7 +193,20 @@ function isValidPoints(value) {
   );
 }
 
-export function QuestEditor({
+export function QuestEditor(props) {
+  const { account } = useGame();
+  const context = props.draftId
+    ? ["draft", props.draftId]
+    : ["new", props.playerId ?? "", props.sharedGoalId ?? ""];
+  const recoveryKey =
+    "rootspiree.quest-edits.v1:" + JSON.stringify([account.id, ...context]);
+  return (
+    <QuestEditorForm key={recoveryKey} recoveryKey={recoveryKey} {...props} />
+  );
+}
+
+function QuestEditorForm({
+  recoveryKey,
   playerId,
   sharedGoalId,
   draftId,
@@ -133,21 +214,44 @@ export function QuestEditor({
 }) {
   const { language, t } = useI18n();
   const words = copy[language];
-  const { game, navigate, mutate, setModal } = useGame();
-  const initialDraft = game.questDrafts?.find((draft) => draft.id === draftId);
-  const [form, setForm] = useState(() =>
-    initialForm(initialDraft, playerId, sharedGoalId),
+  const { game, navigate, mutate, refresh, setModal } = useGame();
+  const [edits, setEdits] = useState(() => {
+    const recovered = readEdits(recoveryKey, draftId);
+    return recovered &&
+      !game.quests.some((quest) => quest.id === recovered.form.id)
+      ? recovered
+      : null;
+  });
+  const [newForm] = useState(() =>
+    initialForm(null, playerId, sharedGoalId, edits?.form.id),
   );
-  const [baseline, setBaseline] = useState(form);
-  const [hasDraft, setHasDraft] = useState(Boolean(initialDraft));
-  const [missingDraft] = useState(Boolean(draftId && !initialDraft));
+  const draft = game.questDrafts?.find(
+    (item) => item.id === (draftId ?? edits?.form.id),
+  );
+  const savedForm = draft ? initialForm(draft) : newForm;
+  const hasDraft = Boolean(draft);
+  const missingDraft = Boolean(draftId && !draft);
+  const dirty = Boolean(edits && !sameForm(edits.form, savedForm));
+  const form = dirty ? edits.form : savedForm;
+  const conflict = dirty && hasDraft && !sameForm(edits.baseline, savedForm);
+  const [retained, setRetained] = useState(Boolean(edits));
   const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const [invalidField, setInvalidField] = useState("");
+  const [operation, setOperation] = useState("");
+  const pending = Boolean(operation);
   const submitLock = useRef(false);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const formRef = useRef(null);
   const pointsRef = useRef(null);
   const goalRef = useRef(null);
   const sectionId = useId();
+  const errorId = useId();
   const player = game.players.find((person) => person.id === form.playerId);
   const sharedGoals =
     player?.journey?.goals?.filter((goal) => goal.shared) ?? [];
@@ -158,33 +262,55 @@ export function QuestEditor({
   const openQuests = game.quests.filter(
     (quest) => quest.playerId === player?.id && quest.state === "Open",
   );
-  const dirty = Object.keys(form).some(
-    (field) => form[field] !== baseline[field],
-  );
   const nameOf = (person) => exampleText(t, examples.players, person, "name");
+
+  function syncEdits(next) {
+    setEdits(next);
+    setRetained(writeEdits(recoveryKey, next));
+  }
 
   function change(event) {
     const { name, value } = event.target;
     setError("");
-    setForm((current) => ({
-      ...current,
+    setInvalidField("");
+    const next = {
+      ...form,
       [name]: value,
       ...(name === "playerId" && { sharedGoalId: "" }),
-    }));
+    };
+    syncEdits(
+      sameForm(next, savedForm)
+        ? null
+        : { form: next, baseline: dirty ? edits.baseline : savedForm },
+    );
+  }
+
+  function resolveConflict(keepEdits) {
+    syncEdits(keepEdits ? { form, baseline: savedForm } : null);
+    setError("");
+    setInvalidField("");
+  }
+
+  function discard() {
+    if (!window.confirm(words.confirmBack)) return false;
+    syncEdits(null);
+    setError("");
+    setInvalidField("");
+    return true;
   }
 
   function leave() {
-    if (!dirty || window.confirm(words.confirmBack)) {
-      if (hasDraft && returnPage === "quests") {
-        navigate("quests", { questFilter: "Concepten" });
-      } else {
-        navigate(returnPage);
-      }
+    if (dirty && !retained && !discard()) return;
+    if (hasDraft && returnPage === "quests") {
+      navigate("quests", { questFilter: "Concepten" });
+    } else {
+      navigate(returnPage);
     }
   }
 
   function invalid(field, errorKey) {
     setError(errorKey);
+    setInvalidField(field);
     if (field === "plus" || field === "minus") pointsRef.current.open = true;
     const input =
       field === "sharedGoalId"
@@ -193,8 +319,37 @@ export function QuestEditor({
     input?.focus();
   }
 
+  function validation(field) {
+    return field === invalidField
+      ? { "aria-invalid": true, "aria-describedby": errorId }
+      : null;
+  }
+
+  function clearSavedEdits() {
+    const stored = readEdits(recoveryKey, draftId);
+    if (!stored || sameForm(stored.form, form)) writeEdits(recoveryKey, null);
+    if (mounted.current) setEdits(null);
+  }
+
+  async function draftIsCurrent() {
+    if (!hasDraft) return true;
+    const response = await refresh();
+    if (!mounted.current) return false;
+    if (!response) {
+      setError("error");
+      return false;
+    }
+    const latestDraft = response.game.questDrafts?.find(
+      ({ id }) => id === form.id,
+    );
+    if (latestDraft && sameForm(initialForm(latestDraft), savedForm))
+      return true;
+    setError("reviewUpdatedDraft");
+    return false;
+  }
+
   async function save(assign) {
-    if (submitLock.current) return;
+    if (submitLock.current || conflict || missingDraft) return;
     const quest = {
       ...form,
       playerId: player?.id ?? null,
@@ -226,45 +381,51 @@ export function QuestEditor({
 
     submitLock.current = true;
     setError("");
-    setPending(true);
+    setInvalidField("");
+    setOperation(assign ? "assigning" : "saving");
     try {
+      if (!(await draftIsCurrent()) || !mounted.current) return;
       const response = await mutate(assign ? "quest" : "saveQuestDraft", {
         quest,
       });
       if (!response) {
-        setError("error");
+        if (mounted.current) setError("error");
         return;
       }
+      clearSavedEdits();
+      if (!mounted.current) return;
       if (assign) {
         navigate("quests");
         setModal({ kind: "quest", id: response.questId ?? quest.id });
-        return;
+      } else if (!draftId) {
+        navigate(
+          "questEditor",
+          { questEditor: { draftId: quest.id, returnPage } },
+          { replace: true },
+        );
       }
-      const saved =
-        response.game.questDrafts?.find((draft) => draft.id === quest.id) ??
-        quest;
-      const result = initialForm(saved);
-      setForm(result);
-      setBaseline(result);
-      setHasDraft(true);
     } finally {
       submitLock.current = false;
-      setPending(false);
+      if (mounted.current) setOperation("");
     }
   }
 
   async function remove() {
-    if (submitLock.current || !window.confirm(words.confirmRemove)) return;
+    if (submitLock.current || conflict || !window.confirm(words.confirmRemove))
+      return;
     submitLock.current = true;
     setError("");
-    setPending(true);
+    setInvalidField("");
+    setOperation("deleting");
     try {
+      if (!(await draftIsCurrent()) || !mounted.current) return;
       if (await mutate("deleteQuestDraft", { id: form.id })) {
-        navigate("quests", { questFilter: "Concepten" });
-      } else setError("error");
+        clearSavedEdits();
+        if (mounted.current) navigate("quests", { questFilter: "Concepten" });
+      } else if (mounted.current) setError("error");
     } finally {
       submitLock.current = false;
-      setPending(false);
+      if (mounted.current) setOperation("");
     }
   }
 
@@ -293,6 +454,19 @@ export function QuestEditor({
           {words.back}
         </Button>
       </Heading>
+      {conflict && (
+        <div className="quest-editor-conflict" role="status">
+          <p>{words.draftChanged}</p>
+          <div className="quest-editor-buttons">
+            <Button kind="secondary" onClick={() => resolveConflict(false)}>
+              {words.useSaved}
+            </Button>
+            <Button kind="textbtn" onClick={() => resolveConflict(true)}>
+              {words.keepEdits}
+            </Button>
+          </div>
+        </div>
+      )}
       {missingDraft ? (
         <p className="empty">{words.draftMissing}</p>
       ) : (
@@ -309,6 +483,7 @@ export function QuestEditor({
             <Field label={words.player}>
               <select
                 name="playerId"
+                {...validation("playerId")}
                 value={form.playerId}
                 onChange={change}
                 required
@@ -339,6 +514,7 @@ export function QuestEditor({
             <Field label={words.title}>
               <input
                 name="name"
+                {...validation("name")}
                 value={form.name}
                 onChange={change}
                 maxLength={60}
@@ -350,6 +526,7 @@ export function QuestEditor({
               <Field key={name} label={words[label]}>
                 <textarea
                   name={name}
+                  {...validation(name)}
                   value={form[name]}
                   onChange={change}
                   placeholder={words[hint]}
@@ -372,6 +549,7 @@ export function QuestEditor({
                   <Field key={field} label={words[field]}>
                     <input
                       name={field}
+                      {...validation(field)}
                       type="number"
                       min="0"
                       max="999"
@@ -402,6 +580,7 @@ export function QuestEditor({
                     <Field label={words.sharedGoal}>
                       <select
                         name="sharedGoalId"
+                        {...validation("sharedGoalId")}
                         ref={goalRef}
                         value={form.sharedGoalId}
                         onChange={change}
@@ -474,32 +653,44 @@ export function QuestEditor({
           </aside>
           <div className="quest-editor-footer">
             {error && (
-              <p className="quest-editor-error" role="alert">
+              <p id={errorId} className="quest-editor-error" role="alert">
                 {words[error]}
               </p>
             )}
             <div className="quest-editor-buttons">
-              <Button type="submit" icon="flag" disabled={pending}>
-                {player ? words.assignTo(nameOf(player)) : words.assign}
+              <Button type="submit" icon="flag" disabled={pending || conflict}>
+                {operation === "assigning"
+                  ? words.assigning
+                  : player
+                    ? words.assignTo(nameOf(player))
+                    : words.assign}
               </Button>
               <Button
                 kind="secondary"
                 icon="pen"
                 onClick={() => void save(false)}
-                disabled={pending}
+                disabled={pending || conflict}
               >
-                {words.save}
+                {operation === "saving" ? words.saving : words.save}
               </Button>
               {hasDraft && (
                 <Button
                   kind="textbtn quest-editor-delete"
                   onClick={remove}
-                  disabled={pending}
+                  disabled={pending || conflict}
                 >
-                  {words.remove}
+                  {operation === "deleting" ? words.deleting : words.remove}
                 </Button>
               )}
             </div>
+            {dirty && !pending && !conflict && (
+              <div className="quest-editor-local">
+                {retained && <p role="status">{words.localEdits}</p>}
+                <Button kind="textbtn" onClick={discard}>
+                  {words.discard}
+                </Button>
+              </div>
+            )}
             {hasDraft && !dirty && (
               <p className="quest-editor-saved" role="status">
                 <Icon name="check" />

@@ -263,10 +263,8 @@ function QuestDraftList() {
 export function Players({ embedded = false }) {
   const { language, t } = useI18n();
   const words = copy[language];
-  const { game, gm, setModal, view } = useGame();
-  const [filter, setFilter] = useState(
-    view.peopleFilter === "characters" ? "characters" : "players",
-  );
+  const { game, gm, setModal, view, navigate } = useGame();
+  const filter = view.peopleFilter || "players";
   return (
     <div className="quest-workspace">
       {!embedded && <Heading title={t("Spelers")} />}
@@ -279,7 +277,7 @@ export function Players({ embedded = false }) {
             all: words.allPeople,
           }}
           selected={filter}
-          onChange={setFilter}
+          onChange={(peopleFilter) => navigate("players", { peopleFilter })}
         />
         {gm && (
           <Button

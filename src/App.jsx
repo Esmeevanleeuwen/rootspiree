@@ -2,19 +2,17 @@ import { useEffect, useState } from "react";
 import { api } from "./api.js";
 import { landingCopy } from "./landing-copy.js";
 import { I18nProvider } from "./i18n.jsx";
+import {
+  onHistoryChange,
+  screenForHash,
+  screenHash,
+  writeHash,
+} from "./navigation.js";
 import { GameProvider } from "./store.jsx";
 import { workspaceCopy } from "./workspace-copy.js";
 import { Button } from "./components/ui.jsx";
 import { Entry } from "./components/Entry.jsx";
 import { GameWorkspace } from "./components/GameWorkspace.jsx";
-
-const routes = {
-  landing: "",
-  auth: "#/login",
-  register: "#/signup",
-  onboard: "#/setup",
-  game: "#/play",
-};
 
 function getLocale() {
   try {
@@ -24,31 +22,22 @@ function getLocale() {
     return null;
   }
 }
-function getRoute() {
-  return (
-    Object.keys(routes).find((key) => routes[key] === window.location.hash) ||
-    "landing"
-  );
-}
-
 export default function App() {
-  const [route, setRoute] = useState(getRoute);
+  const [hash, setHash] = useState(() => window.location.hash);
+  const route = screenForHash(hash);
   const [language, setLang] = useState(() => getLocale() || "en");
   const [account, setAccount] = useState(null);
   const [status, setStatus] = useState("loading");
   const [authError, setAuthError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const words = workspaceCopy[language];
-  const go = (screen) => {
-    if (location.hash !== routes[screen]) location.hash = routes[screen];
-    setRoute(screen);
-  };
+  function go(screen, options) {
+    const nextHash = screenHash(screen, window.location.hash);
+    writeHash(nextHash, options);
+    setHash(nextHash);
+  }
 
-  useEffect(() => {
-    const onHash = () => setRoute(getRoute());
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
+  useEffect(() => onHistoryChange(() => setHash(window.location.hash)), []);
   useEffect(() => {
     document.documentElement.lang = language;
     document.title = landingCopy[language].pageTitle;
@@ -81,7 +70,7 @@ export default function App() {
   }
   function signedOut() {
     setAccount(null);
-    go("landing");
+    go("landing", { replace: true });
   }
   async function logout() {
     setAuthError("");
@@ -100,7 +89,7 @@ export default function App() {
     else if (route !== "register") screen = "auth";
   }
   useEffect(() => {
-    if (status === "ready" && route !== screen) go(screen);
+    if (status === "ready" && route !== screen) go(screen, { replace: true });
   }, [status, route, screen]);
 
   if (status !== "ready" && screen !== "landing")

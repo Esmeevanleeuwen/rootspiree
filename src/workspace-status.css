@@ -1,0 +1,35 @@
+.workspace-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  margin-block-end: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+.workspace-placeholder {
+  max-width: 44rem;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+.workspace-placeholder > div {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-start: var(--space-4);
+}
+.workspace-placeholder span {
+  width: 100%;
+  height: var(--space-4);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+}
+.workspace-placeholder span:last-child {
+  width: 63%;
+}

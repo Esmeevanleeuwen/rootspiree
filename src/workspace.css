@@ -8,10 +8,25 @@
   border-radius: var(--radius-md);
 }
 
+html:has(.app-shell) {
+  scrollbar-gutter: stable;
+}
+
+html:has(.workspace-dialog[open]) {
+  overflow: hidden;
+}
+
+.workspace-dialog {
+  overscroll-behavior: contain;
+}
+
 .app-sidebar {
   position: sticky;
   top: var(--space-3);
   min-height: min(44rem, calc(100dvh - var(--space-6)));
+  max-height: calc(100dvh - var(--space-6));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   align-self: start;
   display: flex;
   flex-direction: column;
@@ -57,6 +72,7 @@
 
 .app-nav-link {
   width: 100%;
+  min-width: 0;
   min-height: var(--control-height);
   display: flex;
   align-items: center;
@@ -178,6 +194,9 @@
 .app-account[open] .app-account-trigger {
   background: var(--color-surface-hover);
 }
+.app-account-trigger[data-account-page] {
+  border-color: var(--color-positive);
+}
 .app-account-trigger:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
@@ -217,6 +236,9 @@
   position: absolute;
   inset: calc(100% + var(--space-2)) 0 auto auto;
   width: min(15rem, calc(100vw - var(--space-7)));
+  max-height: calc(100dvh - var(--nav-height) - var(--space-5));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: grid;
   gap: var(--space-1);
   padding: var(--space-2);
@@ -243,7 +265,8 @@
   text-align: left;
 }
 
-.app-account-panel > button:hover {
+.app-account-panel > button:hover,
+.app-account-panel > button[aria-current="page"] {
   background: var(--color-surface-hover);
 }
 .app-account-panel > button .ico {
@@ -452,6 +475,8 @@
     z-index: 4;
     display: block;
     min-height: auto;
+    max-height: none;
+    overflow: visible;
     padding: var(--space-1) var(--space-2)
       max(env(safe-area-inset-bottom), var(--space-1));
     border: 0;
@@ -478,13 +503,18 @@
     flex-direction: column;
     justify-content: center;
     gap: var(--space-1);
-    min-height: calc(var(--nav-height) - var(--space-2));
+    min-height: max(44px, calc(var(--nav-height) - var(--space-2)));
     padding: var(--space-1);
     border-inline-start-width: 1px;
     border-bottom-width: 2px;
     font-size: var(--font-size-xs);
     text-align: center;
     line-height: 1.12;
+  }
+
+  .app-nav-link span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .app-nav-link[aria-current="page"] {
@@ -506,7 +536,17 @@
     display: block;
   }
   .app-account-trigger {
+    min-height: max(44px, var(--control-height));
     max-width: min(12rem, 49vw);
+  }
+
+  .app-account-panel > button,
+  .workspace-dialog .x {
+    min-height: 44px;
+  }
+
+  .workspace-dialog .x {
+    min-width: 44px;
   }
 
   .app-content.wrap {

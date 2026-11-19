@@ -1,5 +1,5 @@
 import { useI18n } from "../i18n.jsx";
-import { useEffect, useRef } from "react";
+import { useId, useLayoutEffect, useRef } from "react";
 import { useGame } from "../store.jsx";
 import { paths } from "../icons.js";
 import { houses } from "../content.js";
@@ -99,28 +99,96 @@ export function Dialog({ label, title, close, children }) {
   const { warning } = useGame() || {};
   const { t } = useI18n();
   const ref = useRef(null);
-  useEffect(() => {
+  const titleId = useId();
+  const dismissing = useRef(false);
+  const backdropPress = useRef(false);
+
+  useLayoutEffect(() => {
     const dialog = ref.current;
+    const document = dialog.ownerDocument;
+    const opener = document.activeElement;
     dialog.showModal();
+
     return () => {
       if (dialog.open) dialog.close();
+      if (document.querySelector("dialog[open]")) return;
+      if (
+        opener instanceof HTMLElement &&
+        opener !== document.body &&
+        opener.isConnected &&
+        !opener.closest("dialog:not([open])")
+      ) {
+        opener.focus({ preventScroll: true });
+        return;
+      }
+
+      // The opener may have been replaced when a dialog also changed the page.
+      requestAnimationFrame(() => {
+        if (
+          document.activeElement !== document.body ||
+          document.querySelector("dialog[open]")
+        )
+          return;
+        const heading = document.querySelector(".app-content h1");
+        if (heading) {
+          heading.tabIndex = -1;
+          heading.focus({ preventScroll: true });
+        }
+      });
     };
   }, []);
+
+  function dismiss() {
+    if (dismissing.current) return;
+    dismissing.current = true;
+    close();
+  }
+
+  function isBackdrop(event) {
+    if (event.target !== event.currentTarget) return false;
+    const { left, right, top, bottom } =
+      event.currentTarget.getBoundingClientRect();
+    return (
+      event.clientX < left ||
+      event.clientX > right ||
+      event.clientY < top ||
+      event.clientY > bottom
+    );
+  }
+
   return (
     <dialog
       ref={ref}
-      aria-labelledby="dialogTitle"
-      onCancel={close}
-      onClick={(e) => {
-        if (e.target === ref.current) close();
+      className="workspace-dialog"
+      aria-labelledby={titleId}
+      onCancel={(event) => {
+        event.preventDefault();
+        dismiss();
+      }}
+      onPointerDown={(event) => {
+        backdropPress.current =
+          event.isPrimary && event.button === 0 && isBackdrop(event);
+      }}
+      onPointerCancel={() => {
+        backdropPress.current = false;
+      }}
+      onClick={(event) => {
+        const clickedBackdrop = backdropPress.current && isBackdrop(event);
+        backdropPress.current = false;
+        if (clickedBackdrop) dismiss();
       }}
     >
       <div className="dialogin">
         <div className="minihead">
           <span className="eyebrow">{label}</span>
-          <Button kind="x" aria-label={t("Sluiten")} icon="x" onClick={close} />
+          <Button
+            kind="x"
+            aria-label={t("Sluiten")}
+            icon="x"
+            onClick={dismiss}
+          />
         </div>
-        <h2 id="dialogTitle">{title}</h2>
+        <h2 id={titleId}>{title}</h2>
         {warning && (
           <p role="alert">{t("Deze wijziging kon niet worden opgeslagen.")}</p>
         )}

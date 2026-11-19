@@ -70,6 +70,7 @@ export function GameNavigation({ gm, page, navigate, words }) {
 export function GameTopBar({
   account,
   gm,
+  page,
   language,
   setLanguage,
   navigate,
@@ -93,12 +94,15 @@ export function GameTopBar({
   }, []);
 
   function close() {
-    menu.current.open = false;
+    if (menu.current?.open) menu.current.open = false;
   }
+
   function openPage(page) {
     close();
     navigate(page);
   }
+
+  const accountPage = ["profile", "settings", "guide"].includes(page);
 
   return (
     <header className="app-top">
@@ -110,17 +114,20 @@ export function GameTopBar({
         ref={menu}
         onKeyDown={(event) => {
           if (event.key !== "Escape" || !menu.current.open) return;
+          event.preventDefault();
           close();
-          trigger.current.focus();
+          trigger.current.focus({ preventScroll: true });
         }}
         onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget)) close();
+          const nextFocus = event.relatedTarget;
+          if (nextFocus && !event.currentTarget.contains(nextFocus)) close();
         }}
       >
         <summary
           className="app-account-trigger"
           ref={trigger}
           aria-label={words.accountMenu}
+          data-account-page={accountPage || undefined}
         >
           <span className="app-initial" aria-hidden="true">
             {initial}
@@ -132,16 +139,28 @@ export function GameTopBar({
         </summary>
         <div className="app-account-panel">
           {!gm && (
-            <button type="button" onClick={() => openPage("profile")}>
+            <button
+              type="button"
+              aria-current={page === "profile" ? "page" : undefined}
+              onClick={() => openPage("profile")}
+            >
               <Icon name="book" />
               {words.profile}
             </button>
           )}
-          <button type="button" onClick={() => openPage("settings")}>
+          <button
+            type="button"
+            aria-current={page === "settings" ? "page" : undefined}
+            onClick={() => openPage("settings")}
+          >
             <Icon name="settings" />
             {words.settings}
           </button>
-          <button type="button" onClick={() => openPage("guide")}>
+          <button
+            type="button"
+            aria-current={page === "guide" ? "page" : undefined}
+            onClick={() => openPage("guide")}
+          >
             <Icon name="info" />
             {words.about}
           </button>

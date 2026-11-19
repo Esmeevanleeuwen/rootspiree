@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { api } from "../api.js";
 import valley from "../assets/vallei.webp";
 import { agreement, statements } from "../content.js";
@@ -13,6 +13,10 @@ const copy = {
     home: "Back to the homepage",
     login: "Log in",
     logout: "Log out",
+    loggingIn: "Logging in…",
+    creatingAccount: "Creating your account…",
+    savingAnswers: "Saving your answers…",
+    savingQuiz: "Saving your quiz…",
     create: "Create an account",
     enter: "Enter the game",
     resume: "Continue setup",
@@ -42,6 +46,10 @@ const copy = {
     home: "Terug naar de homepage",
     login: "Inloggen",
     logout: "Uitloggen",
+    loggingIn: "Bezig met inloggen…",
+    creatingAccount: "Je account aanmaken…",
+    savingAnswers: "Je antwoorden opslaan…",
+    savingQuiz: "Je quiz opslaan…",
     create: "Account aanmaken",
     enter: "Open het spel",
     resume: "Ga verder met instellen",
@@ -153,13 +161,17 @@ function Wordmark({ onHome, label }) {
 }
 
 function Problem({ error, language }) {
+  const message = useRef(null);
+  useEffect(() => {
+    if (error) message.current?.focus();
+  }, [error]);
   if (!error) return null;
   const localized = errors[error] ?? [
     "Something went wrong. Please try again.",
     "Er ging iets mis. Probeer het opnieuw.",
   ];
   return (
-    <p className="entry-error" role="alert">
+    <p className="entry-error" role="alert" ref={message} tabIndex="-1">
       {localized[language === "nl" ? 1 : 0]}
     </p>
   );
@@ -170,12 +182,9 @@ function Auth({ strings, language, go, onAccount, mode }) {
   const [busy, setBusy] = useState(false);
   const isSignup = mode === "register";
   const title = isSignup ? strings.create : strings.login;
-  const emailField = useRef(null);
   const submitLock = useRef(false);
-  useEffect(() => {
-    setError("");
-    if (isSignup) emailField.current?.focus();
-  }, [isSignup]);
+  const pendingLabel = isSignup ? strings.creatingAccount : strings.loggingIn;
+  useEffect(() => setError(""), [isSignup]);
   async function submit(event) {
     event.preventDefault();
     if (submitLock.current) return;
@@ -246,9 +255,10 @@ function Auth({ strings, language, go, onAccount, mode }) {
           <h1>{title}</h1>
           <Field label={strings.email}>
             <input
-              ref={emailField}
               name="email"
               type="email"
+              autoCapitalize="none"
+              spellCheck={false}
               autoComplete={isSignup ? "email" : "username"}
               required
               maxLength={254}
@@ -289,8 +299,11 @@ function Auth({ strings, language, go, onAccount, mode }) {
             disabled={busy}
             aria-busy={busy}
           >
-            {title}
+            {busy ? pendingLabel : title}
           </Button>
+          <span className="entry-announcement" role="status">
+            {busy ? pendingLabel : ""}
+          </span>
         </form>
       </div>
     </main>
@@ -312,23 +325,35 @@ export function QuizForm({
   const strings = copy[language];
   const t = (value) => translate(language, value);
   const [page, setPage] = useState(initialPage);
-  const [missing, setMissing] = useState(false);
+  const [missing, setMissing] = useState(null);
   const intro = useRef(null);
+  const previousPage = useRef(initialPage);
+  const questions = useRef(new Map());
+  const missingId = useId();
   const start = page * pageSize;
   const end = Math.min(start + pageSize, statements.length);
   const finalPage = page === pageCount - 1;
+  useEffect(() => {
+    if (previousPage.current === page) return;
+    previousPage.current = page;
+    intro.current?.focus();
+  }, [page]);
+  useEffect(() => {
+    if (missing !== null) questions.current.get(missing)?.focus();
+  }, [missing]);
+
   function changePage(next) {
     setPage(next);
     onPageChange?.(next);
-    setMissing(false);
-    intro.current?.focus();
+    setMissing(null);
   }
   function submit(event) {
     event.preventDefault();
     if (busy) return;
     for (let i = start; i < end; i++) {
       if (!Number.isInteger(answers[i])) {
-        setMissing(true);
+        if (missing === i) questions.current.get(i)?.focus();
+        setMissing(i);
         return;
       }
     }
@@ -336,7 +361,7 @@ export function QuizForm({
     else changePage(page + 1);
   }
   return (
-    <form className="test-sheet entry-quiz" onSubmit={submit}>
+    <form className="test-sheet entry-quiz" onSubmit={submit} noValidate>
       <div className="test-progress" ref={intro} tabIndex="-1">
         <span>{strings.part(page + 1, pageCount)}</span>
         <span>{strings.range(start + 1, end, statements.length)}</span>
@@ -352,7 +377,17 @@ export function QuizForm({
       {statements.slice(start, end).map(([, sentence], offset) => {
         const index = start + offset;
         return (
-          <fieldset className="statement" key={index} disabled={busy}>
+          <fieldset
+            className="statement"
+            key={index}
+            disabled={busy}
+            ref={(element) => {
+              if (element) questions.current.set(index, element);
+              else questions.current.delete(index);
+            }}
+            tabIndex="-1"
+            aria-describedby={missing === index ? missingId : undefined}
+          >
             <legend>
               {index + 1}. {t(sentence)}
             </legend>
@@ -365,13 +400,14 @@ export function QuizForm({
                     required
                     aria-label={t(label)}
                     checked={answers[index] === value}
-                    onChange={() =>
+                    onChange={() => {
+                      if (missing === index) setMissing(null);
                       onAnswers(
                         answers.map((answer, i) =>
                           i === index ? value : answer,
                         ),
-                      )
-                    }
+                      );
+                    }}
                   />
                   <span aria-hidden="true" />
                 </label>
@@ -384,18 +420,22 @@ export function QuizForm({
             <output className="answer-word" aria-live="polite">
               {answers[index] == null ? "" : t(agreement[answers[index]])}
             </output>
+            {missing === index && (
+              <p className="entry-error" id={missingId} role="alert">
+                {strings.answerRequired}
+              </p>
+            )}
           </fieldset>
         );
       })}
-      {missing && (
-        <p className="entry-error" role="alert">
-          {strings.answerRequired}
-        </p>
-      )}
       <Problem error={error} language={language} />
       <div className="actions">
         <Button type="submit" disabled={busy} aria-busy={busy}>
-          {finalPage ? (finishLabel ?? strings.finish) : strings.continue}
+          {busy
+            ? strings.savingQuiz
+            : finalPage
+              ? (finishLabel ?? strings.finish)
+              : strings.continue}
         </Button>
         {(page > 0 || onBack) && (
           <Button
@@ -407,61 +447,74 @@ export function QuizForm({
           </Button>
         )}
       </div>
+      <span className="entry-announcement" role="status">
+        {busy ? strings.savingQuiz : ""}
+      </span>
     </form>
   );
 }
 
-function loadQuizDraft(accountId) {
-  const empty = { page: 0, answers: Array(statements.length).fill(null) };
+function readEntryDraft(kind, accountId) {
   try {
-    const draft = JSON.parse(
-      sessionStorage.getItem("rootspiree-quiz:" + accountId),
+    return JSON.parse(
+      sessionStorage.getItem("rootspiree-" + kind + ":" + accountId),
     );
-    if (
-      !Array.isArray(draft?.answers) ||
-      draft.answers.length !== statements.length
-    )
-      return empty;
-    if (
-      draft.answers.some(
-        (answer) =>
-          answer !== null &&
-          (!Number.isInteger(answer) ||
-            answer < 0 ||
-            answer >= agreement.length),
-      )
-    )
-      return empty;
-    if (
-      !Number.isInteger(draft.page) ||
-      draft.page < 0 ||
-      draft.page >= pageCount
-    )
-      return empty;
-    if (draft.answers.slice(0, draft.page * pageSize).includes(null))
-      return empty;
-    return draft;
   } catch {
-    return empty;
+    return null;
   }
 }
 
-function saveQuizDraft(accountId, draft) {
+function writeEntryDraft(kind, accountId, draft) {
+  const key = "rootspiree-" + kind + ":" + accountId;
   try {
-    if (draft)
-      sessionStorage.setItem(
-        "rootspiree-quiz:" + accountId,
-        JSON.stringify(draft),
-      );
-    else sessionStorage.removeItem("rootspiree-quiz:" + accountId);
+    if (draft) sessionStorage.setItem(key, JSON.stringify(draft));
+    else sessionStorage.removeItem(key);
   } catch {
-    // Storage may be blocked; the current quiz still works.
+    // Storage may be blocked; edits remain available for this visit.
   }
+}
+
+function loadProfileDraft(account) {
+  const draft = readEntryDraft("profile", account.id);
+  const saved = Object.fromEntries(
+    profileFields.map((key) => [key, account.profile?.[key] ?? ""]),
+  );
+  const canRestore =
+    draft &&
+    profileFields.every(
+      (key) => typeof draft[key] === "string" && draft[key].length <= 500,
+    ) &&
+    profileFields.some((key) => draft[key] !== saved[key]);
+  return canRestore
+    ? { fields: draft, restored: true }
+    : { fields: saved, restored: false };
+}
+
+function loadQuizDraft(accountId) {
+  const empty = { page: 0, answers: Array(statements.length).fill(null) };
+  const draft = readEntryDraft("quiz", accountId);
+  if (
+    !Array.isArray(draft?.answers) ||
+    draft.answers.length !== statements.length ||
+    draft.answers.some(
+      (answer) =>
+        answer !== null &&
+        (!Number.isInteger(answer) || answer < 0 || answer >= agreement.length),
+    ) ||
+    !Number.isInteger(draft.page) ||
+    draft.page < 0 ||
+    draft.page >= pageCount ||
+    draft.answers.slice(0, draft.page * pageSize).includes(null)
+  )
+    return empty;
+  return draft;
 }
 
 function Onboarding({ account, language, strings, onAccount, go }) {
+  const [initialProfile] = useState(() => loadProfileDraft(account));
+  const [profile, setProfile] = useState(initialProfile.fields);
   const [step, setStep] = useState(
-    account.profileComplete ? "quiz" : "profile",
+    account.profileComplete && !initialProfile.restored ? "quiz" : "profile",
   );
   const [draft, setDraft] = useState(() => loadQuizDraft(account.id));
   const [error, setError] = useState("");
@@ -472,7 +525,7 @@ function Onboarding({ account, language, strings, onAccount, go }) {
   useEffect(() => heading.current?.focus(), [step]);
   function changeDraft(nextDraft) {
     setDraft(nextDraft);
-    saveQuizDraft(account.id, nextDraft);
+    writeEntryDraft("quiz", account.id, nextDraft);
   }
   async function submit(path, method, data) {
     if (submitLock.current) return;
@@ -483,9 +536,12 @@ function Onboarding({ account, language, strings, onAccount, go }) {
       const { account: updated } = await api(path, { method, data });
       onAccount(updated);
       if (path === "/onboarding") {
-        saveQuizDraft(updated.id, null);
+        writeEntryDraft("quiz", updated.id, null);
+        writeEntryDraft("profile", updated.id, null);
         go("game");
       } else {
+        writeEntryDraft("profile", updated.id, null);
+        setProfile(updated.profile);
         setStep("quiz");
       }
     } catch (error) {
@@ -501,13 +557,18 @@ function Onboarding({ account, language, strings, onAccount, go }) {
       setBusy(false);
     }
   }
+  function changeProfile(event) {
+    const { name, value } = event.target;
+    const next = { ...profile, [name]: value };
+    setProfile(next);
+    writeEntryDraft("profile", account.id, next);
+  }
   function saveProfile(event) {
     event.preventDefault();
-    const fields = new FormData(event.currentTarget);
-    const profile = Object.fromEntries(
-      profileFields.map((key) => [key, fields.get(key).trim()]),
+    const answers = Object.fromEntries(
+      profileFields.map((key) => [key, profile[key].trim()]),
     );
-    void submit("/profile", "PATCH", { profile });
+    void submit("/profile", "PATCH", { profile: answers });
   }
   return (
     <main className="entry-setup">
@@ -552,7 +613,8 @@ function Onboarding({ account, language, strings, onAccount, go }) {
                 name={name}
                 rows={2}
                 maxLength={500}
-                defaultValue={account.profile?.[name] ?? ""}
+                value={profile[name]}
+                onChange={changeProfile}
                 disabled={busy}
               />
             </Field>
@@ -564,8 +626,11 @@ function Onboarding({ account, language, strings, onAccount, go }) {
             disabled={busy}
             aria-busy={busy}
           >
-            {strings.continue}
+            {busy ? strings.savingAnswers : strings.continue}
           </Button>
+          <span className="entry-announcement" role="status">
+            {busy ? strings.savingAnswers : ""}
+          </span>
         </form>
       )}
     </main>
@@ -584,8 +649,16 @@ export function Entry({
 }) {
   const strings = copy[language];
   const focus = useRef(null);
+  const logoutAccount = useRef(null);
   const isLanding = screen === "landing";
   const authMode = screen === "register" ? "register" : "login";
+  const accountId = account?.id;
+  useEffect(() => {
+    if (logoutAccount.current && logoutAccount.current !== accountId) {
+      writeEntryDraft("profile", logoutAccount.current, null);
+      logoutAccount.current = null;
+    }
+  }, [accountId]);
   useEffect(() => {
     const sectionId = isLanding ? window.location.hash.slice(1) : "";
     const section = ["how-it-works", "example-quest"].includes(sectionId)
@@ -605,6 +678,10 @@ export function Entry({
       focus.current?.querySelector("h1")?.focus({ preventScroll: true });
     }
   }
+  function logout() {
+    logoutAccount.current = accountId;
+    onLogout();
+  }
   return (
     <div
       className={"entry-site" + (isLanding ? " landing-site" : "")}
@@ -621,7 +698,7 @@ export function Entry({
             </Button>
           )}
           {account && onLogout && (
-            <Button kind="textbtn" onClick={onLogout}>
+            <Button kind="textbtn" onClick={logout}>
               {strings.logout}
             </Button>
           )}

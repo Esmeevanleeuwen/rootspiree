@@ -270,3 +270,32 @@
     background-position: 70% 47%;
   }
 }
+
+.entry-announcement {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.entry-action[aria-busy="true"],
+.entry-quiz button[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+.entry-quiz .statement[aria-describedby] {
+  outline: 1px solid var(--color-negative);
+  outline-offset: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.entry-quiz .statement[tabindex="-1"],
+.entry-quiz .test-progress,
+.entry-error[tabindex="-1"] {
+  scroll-margin-block-start: var(--space-5);
+}

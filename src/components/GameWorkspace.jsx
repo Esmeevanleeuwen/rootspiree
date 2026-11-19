@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
+import { statements } from "../content.js";
 import { useI18n } from "../i18n.jsx";
 import { useGame } from "../store.jsx";
 import { workspaceCopy } from "../workspace-copy.js";
@@ -18,6 +19,7 @@ import { QuestEditor } from "./QuestEditor.jsx";
 import { WorldGuide } from "./WorldGuide.jsx";
 import { Button, Heading } from "./ui.jsx";
 import "../workspace.css";
+import "../workspace-status.css";
 
 function AdminAccounts({ words }) {
   const [state, setState] = useState({ accounts: null, error: false });
@@ -87,15 +89,17 @@ function AdminAccounts({ words }) {
 }
 
 function Retake({ words, language }) {
-  const { view, navigate, retake } = useGame();
-  const [answers, setAnswers] = useState(view.test.answers);
+  const { navigate, retake } = useGame();
+  const [answers, setAnswers] = useState(() =>
+    Array(statements.length).fill(null),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function submit() {
     setError("");
     setBusy(true);
     const result = await retake(answers);
-    if (result) navigate("profile");
+    if (result) navigate("profile", {}, { replace: true });
     else {
       setError(words.error);
       setBusy(false);
@@ -180,6 +184,33 @@ function Settings({
   );
 }
 
+function WorkspaceLoading({ words, failed, retry, retrying }) {
+  if (failed)
+    return (
+      <div className="workspace-notice" role="alert">
+        <p>{words.loadFailed}</p>
+        <Button
+          kind="secondary"
+          onClick={retry}
+          disabled={retrying}
+          aria-busy={retrying}
+        >
+          {retrying ? words.loading : words.retry}
+        </Button>
+      </div>
+    );
+  return (
+    <div className="workspace-placeholder" role="status">
+      <p>{words.loading}</p>
+      <div aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+    </div>
+  );
+}
+
 export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
   const {
     account,
@@ -189,6 +220,7 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
     view,
     modal,
     warning,
+    syncWarning,
     navigate,
     refresh,
     setModal,
@@ -196,7 +228,9 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
   const { t } = useI18n();
   const words = workspaceCopy[language];
   const content = useRef(null);
+  const [retrying, setRetrying] = useState(false);
   const { page } = view;
+  const ready = Boolean(game && player);
   const j = player?.journey;
   const step =
     page === "home" && !gm && j
@@ -208,19 +242,16 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
     window.scrollTo(0, 0);
     title.tabIndex = -1;
     title.focus({ preventScroll: true });
-  }, [page, step, Boolean(game)]);
-  if (!game || !player)
-    return (
-      <main className="app-loading">
-        <p role={warning ? "alert" : "status"}>
-          {warning ? words.loadFailed : words.loading}
-        </p>
-        {warning && <Button onClick={refresh}>{words.retry}</Button>}
-        <Button kind="textbtn" onClick={onLogout}>
-          {words.logOut}
-        </Button>
-      </main>
-    );
+  }, [page, step, ready]);
+
+  async function retryWorkspace() {
+    setRetrying(true);
+    try {
+      await refresh();
+    } finally {
+      setRetrying(false);
+    }
+  }
 
   const screens = {
     home: gm ? <Overview /> : <Journey />,
@@ -248,8 +279,7 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
       <PeopleWorkspace page="accounts" words={words} navigate={navigate} />
     ) : null,
     profile: gm ? null : <Profile personalAnswers={account.profile} />,
-    test:
-      !gm && view.test ? <Retake words={words} language={language} /> : null,
+    test: !gm ? <Retake words={words} language={language} /> : null,
     guide: (
       <>
         <Heading title={words.about} />
@@ -275,6 +305,7 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
         <GameTopBar
           account={account}
           gm={gm}
+          page={page}
           language={language}
           setLanguage={setLanguage}
           navigate={navigate}
@@ -296,10 +327,35 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
                   : t("Deze wijziging kon niet worden opgeslagen."))}
             </p>
           )}
-          <div key={page}>{screens[page] || screens.home}</div>
+          {ready && syncWarning && (
+            <div className="workspace-notice" role="status">
+              <p>{words.syncWarning}</p>
+              <Button
+                kind="textbtn"
+                onClick={retryWorkspace}
+                disabled={retrying}
+                aria-busy={retrying}
+              >
+                {retrying ? words.loading : words.retry}
+              </Button>
+            </div>
+          )}
+          <div key={page}>
+            {ready ? (
+              screens[page] || screens.home
+            ) : (
+              <WorkspaceLoading
+                words={words}
+                failed={syncWarning}
+                retry={retryWorkspace}
+                retrying={retrying}
+              />
+            )}
+          </div>
         </div>
       </main>
-      {modal &&
+      {ready &&
+        modal &&
         (modal.kind === "bio" ? (
           <BioDialog />
         ) : ["house", "retake", "exercise"].includes(modal.kind) ? (
