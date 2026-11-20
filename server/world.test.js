@@ -179,6 +179,59 @@ test("only the owner can read private profiles and the GM can read explicitly sh
   assert.equal((await request("admin")).game.quests[0].privateSteps, undefined);
 });
 
+test("players can share their exact personality match without exposing private scores", async (t) => {
+  const { db, request } = worldFixture(t);
+  const readAlex = async (actor) =>
+    (await request(actor)).game.players.find((player) => player.id === "alex");
+  const updateScores = db.prepare(
+    "UPDATE accounts SET type_scores = ? WHERE id = 'alex'",
+  );
+  updateScores.run("[3,-1,4,2,8]");
+
+  const own = await readAlex("alex");
+  assert.equal(own.personalityCode, "ENTJ");
+  assert.equal(own.sharePersonality, false);
+  assert.deepEqual(own.journey.typeScores, [3, -1, 4, 2, 8]);
+  assert.equal(Object.hasOwn(await readAlex("casey"), "personalityCode"), false);
+  assert.equal(Object.hasOwn(await readAlex("admin"), "personalityCode"), false);
+  await assert.rejects(
+    () => request("alex", { action: "personalitySharing", shared: "true" }),
+    { code: "invalid_input" },
+  );
+  await assert.rejects(
+    () => request("admin", { action: "personalitySharing", shared: true }),
+    { code: "forbidden" },
+  );
+
+  const journey = { ...emptyJourney(), stage: "room", house: "nacht" };
+  await request("alex", { action: "journey", journey });
+  await request("alex", { action: "bio", bio: "My public bio" });
+  await request("alex", { action: "personalitySharing", shared: true });
+  await request("casey", {
+    action: "personalitySharing",
+    shared: false,
+    playerId: "alex",
+  });
+  for (const viewer of ["casey", "admin"]) {
+    const shared = await readAlex(viewer);
+    assert.equal(shared.personalityCode, "ENTJ");
+    assert.equal(Object.hasOwn(shared, "sharePersonality"), false);
+    assert.deepEqual(shared.journey, { house: "nacht", goals: [] });
+    assert.equal(shared.desc, "My public bio");
+    assert.equal(Object.hasOwn(shared, "profile"), false);
+  }
+  assert.equal((await readAlex("alex")).sharePersonality, true);
+
+  updateScores.run("[-3,1,-4,0,-8]");
+  assert.equal(Object.hasOwn(await readAlex("casey"), "personalityCode"), false);
+  updateScores.run("[-3,1,-4,-2,-8]");
+  assert.equal((await readAlex("casey")).personalityCode, "ISFP");
+  await request("alex", { action: "personalitySharing", shared: false });
+  assert.equal(Object.hasOwn(await readAlex("casey"), "personalityCode"), false);
+  assert.equal((await readAlex("alex")).personalityCode, "ISFP");
+  assert.equal((await readAlex("alex")).sharePersonality, false);
+});
+
 test("likes retain the public count without exposing which other accounts voted", async (t) => {
   const { request } = worldFixture(t);
   await request("admin", { action: "post", id: "post-1", text: "Welcome" });
@@ -362,6 +415,17 @@ test("an assignment can link only to a currently shared goal of the recipient", 
 test("opening a previous world updates the schema and preserves its quests", async (t) => {
   const { db, request } = worldFixture(t, (db) => {
     db.exec(`
+      CREATE TABLE world_profiles (
+        account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+        bio TEXT NOT NULL DEFAULT '',
+        journey TEXT,
+        type_scores TEXT
+      );
+      INSERT INTO accounts (
+        id, email, name, role, password_hash, profile_json, onboarding_complete, language, created_at
+      ) VALUES ('previous', 'previous@example.test', 'Previous', 'player', 'unused', '{}', 1, 'en', 0);
+      INSERT INTO world_profiles (account_id, bio)
+        VALUES ('previous', 'Previous profile');
       CREATE TABLE world_quests (
         id TEXT PRIMARY KEY,
         player_id TEXT NOT NULL,
@@ -381,6 +445,11 @@ test("opening a previous world updates the schema and preserves its quests", asy
     setupWorld(db);
   });
   setupWorld(db);
+  const previous = (await request("previous")).game.players.find(
+    (player) => player.id === "previous",
+  );
+  assert.equal(previous.desc, "Previous profile");
+  assert.equal(previous.sharePersonality, false);
   const [old] = (await request("alex")).game.quests;
   assert.equal(old.desc, "Old instructions");
   assert.equal(old.submissionPrompt, undefined);

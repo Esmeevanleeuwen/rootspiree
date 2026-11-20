@@ -129,6 +129,12 @@ html:has(.workspace-dialog[open]) {
   height: var(--space-3);
 }
 
+.app-account-trigger .avatar {
+  width: var(--space-5);
+  height: var(--space-5);
+  border-radius: var(--radius-pill);
+}
+
 .app-account-name {
   overflow: hidden;
   text-overflow: ellipsis;

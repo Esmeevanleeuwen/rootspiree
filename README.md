@@ -61,6 +61,6 @@ Import this repository as a Vite project. Vercel builds the frontend from `main`
 
 Vercel stores accounts, sessions, and world progress in the `levelup` schema. The Supabase Data API has no access to those tables. The local development server still uses SQLite. Existing local accounts and progress are separate from the hosted world.
 
-The four signup answers and quiz results are visible on the player's own profile. The player's bio is public within the game. A player can opt to share an individual quest goal with the Game Master. Original demo profiles in browser storage are separate from server accounts. Email is used as a login identifier. This release has no email verification or password-reset flow.
+The four signup answers and detailed quiz results are private to the player. The player's bio is visible within the game. Players can share their quiz-matched portrait and four-letter type from their profile, or share an individual quest goal with the Game Master. Original demo profiles in browser storage are separate from server accounts. Email is used as a login identifier. This release has no email verification or password-reset flow.
 
 Run `npm test` for the game and account tests.

@@ -337,6 +337,7 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
     <div className="app-shell">
       <GameTopBar
         account={account}
+        player={player}
         gm={gm}
         page={page}
         language={language}

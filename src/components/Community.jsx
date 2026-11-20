@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useGame } from "../store.jsx";
 import { newId, points, typeCode } from "../game.js";
 import { houses } from "../content.js";
+import { personalityProfiles } from "../personality-reports.js";
 import { QuestBrief } from "./QuestBrief.jsx";
 import { QuestList, Status } from "./QuestList.jsx";
 import { Avatar, Button, Dialog, Field, Heading, Icon } from "./ui.jsx";
@@ -34,7 +35,7 @@ const copy = {
     peopleIntro:
       "Meet the players and fictional characters of LevelUp World. Select a profile to see their quests.",
     search: "Search characters",
-    searchPlaceholder: "Search by name or role…",
+    searchPlaceholder: "Search by name, role, or type…",
     realPlayer: "Real player · Light",
     fictionalNpc: "Fictional NPC · Shadow",
     npcLevel: "Story character",
@@ -95,7 +96,7 @@ const copy = {
     peopleIntro:
       "Leer de spelers en fictieve personages van LevelUp World kennen. Open een profiel om de opdrachten te bekijken.",
     search: "Zoek personages",
-    searchPlaceholder: "Zoek op naam of rol…",
+    searchPlaceholder: "Zoek op naam, rol of type…",
     realPlayer: "Echte speler · Licht",
     fictionalNpc: "Fictieve NPC · Schaduw",
     npcLevel: "Verhaalpersonage",
@@ -155,7 +156,7 @@ function belongsToFilter(quest, filter) {
   );
 }
 
-function CharacterCard({ person, name, role, words }) {
+function CharacterCard({ person, name, role, typeName, words }) {
   const { t } = useI18n();
   const { game, gm, navigate, setModal } = useGame();
   const { xp, level, progress, goal } = experience(game, person);
@@ -181,7 +182,12 @@ function CharacterCard({ person, name, role, words }) {
       <p className="character-level">
         {person.npc ? words.npcLevel : `${words.level} ${level} · ${xp} XP`}
       </p>
-      <p className="character-role">{role}</p>
+      <p className="character-role">
+        {typeName || role}{" "}
+        {typeName && (
+          <span className="character-type-code">{person.personalityCode}</span>
+        )}
+      </p>
       <p className="character-bio">
         {exampleText(t, examples.players, person, "desc") || words.emptyBio}
       </p>
@@ -414,9 +420,13 @@ export function Players({ embedded = false }) {
       role: person.registered
         ? t("Speler")
         : exampleText(t, examples.players, person, "role"),
+      typeName: personalityProfiles[person.personalityCode]?.[language]?.name,
     }))
-    .filter(({ name, role }) =>
-      `${name} ${role}`.toLocaleLowerCase(language).includes(query),
+    .filter(({ person, name, role, typeName }) =>
+      [name, role, typeName, person.personalityCode]
+        .join(" ")
+        .toLocaleLowerCase(language)
+        .includes(query),
     );
 
   return (
@@ -450,12 +460,13 @@ export function Players({ embedded = false }) {
       </div>
       {characters.length ? (
         <div className="character-grid">
-          {characters.map(({ person, name, role }) => (
+          {characters.map(({ person, name, role, typeName }) => (
             <CharacterCard
               key={person.id}
               person={person}
               name={name}
               role={role}
+              typeName={typeName}
               words={words}
             />
           ))}
@@ -660,10 +671,12 @@ function QuestDialog({ quest, close }) {
   );
 }
 function PlayerDialog({ target, close }) {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const { gm, player, game, navigate, view } = useGame();
   const own = !gm && player.id === target.id,
     j = target.journey;
+  const typeName =
+    personalityProfiles[target.personalityCode]?.[language]?.name;
   function createQuest(sharedGoalId) {
     navigate("questEditor", {
       questEditor: { playerId: target.id, sharedGoalId, returnPage: view.page },
@@ -686,6 +699,14 @@ function PlayerDialog({ target, close }) {
           <span className="meta">
             {target.npc ? t("NPC · Evil") : t("Speler · Goede kant")}
           </span>
+          {typeName && (
+            <span className="character-role">
+              {typeName}{" "}
+              <span className="character-type-code">
+                {target.personalityCode}
+              </span>
+            </span>
+          )}
         </span>
         <span className="score">
           {points(game, target)} <small>pt</small>
@@ -700,7 +721,7 @@ function PlayerDialog({ target, close }) {
       )}
       {own && (
         <Button kind="textbtn" onClick={() => navigate("profile")}>
-          {j.typeScores ? typeCode(j.typeScores) + " · " : ""}
+          {!typeName && j.typeScores ? typeCode(j.typeScores) + " · " : ""}
           {t("Bekijk mijn profiel")}
         </Button>
       )}

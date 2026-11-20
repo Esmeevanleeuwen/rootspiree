@@ -2,6 +2,7 @@ import { useI18n } from "../i18n.jsx";
 import { useId, useLayoutEffect, useRef } from "react";
 import { useGame } from "../store.jsx";
 import { avatarIcon, houseIcon, illustratedIcons, paths } from "../icons.js";
+import { personalityPortraits } from "../personality-portraits.js";
 
 export function BrandLockup() {
   return (
@@ -67,10 +68,20 @@ export function Section({ title, children }) {
     </div>
   );
 }
-export function Avatar({ player, large = false }) {
+export function Avatar({
+  player,
+  large = false,
+  personalityCode = player.personalityCode,
+}) {
+  const portrait = personalityPortraits[personalityCode];
+  const avatarClass = portrait ? "avatar-portrait" : player.av;
   return (
-    <span className={"avatar " + player.av + (large ? " bigavatar" : "")}>
-      <Icon name={avatarIcon(player)} />
+    <span className={"avatar " + avatarClass + (large ? " bigavatar" : "")}>
+      {portrait ? (
+        <img src={portrait} alt="" loading="lazy" decoding="async" />
+      ) : (
+        <Icon name={avatarIcon(player)} />
+      )}
     </span>
   );
 }

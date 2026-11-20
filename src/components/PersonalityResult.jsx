@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { quizScoreLimit, traits as typeTraits } from "../content.js";
 import { useI18n } from "../i18n.jsx";
 import { reportCopy } from "../personality-report-copy.js";
+import { personalityPortraits } from "../personality-portraits.js";
 import {
   describePersonality,
   personalityProfiles,
@@ -18,10 +19,6 @@ const topics = [
   "workplace",
   "conclusion",
 ];
-const art = import.meta.glob("../assets/personality/*.webp", {
-  eager: true,
-  import: "default",
-});
 const sectionId = (id) => "personality-" + id;
 
 function jumpTo(id) {
@@ -111,7 +108,7 @@ export function PersonalityResult({ scores, onContinue, onProfile, onRetake }) {
       ]
     : ["traitsNav", "matches"];
   const displayedCode = previewCode || result.displayCode;
-  const image = art[`../assets/personality/${profileCode.toLowerCase()}.webp`];
+  const image = personalityPortraits[profileCode];
   const traits = [...profileCode]
     .map((letter, index) => {
       const offset = typeTraits[index].letters.indexOf(letter);

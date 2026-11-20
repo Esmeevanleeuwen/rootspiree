@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { LanguageSelector } from "./Entry.jsx";
-import { BrandLockup, Icon } from "./ui.jsx";
+import { Avatar, BrandLockup, Icon } from "./ui.jsx";
 
 function GameNavigation({ gm, page, navigate, words }) {
   const activePage = page === "questEditor" ? "quests" : page;
@@ -31,6 +31,7 @@ function GameNavigation({ gm, page, navigate, words }) {
 
 export function GameTopBar({
   account,
+  player,
   gm,
   page,
   language,
@@ -97,9 +98,13 @@ export function GameTopBar({
             aria-label={words.accountMenu}
             data-account-page={accountPage || undefined}
           >
-            <span className="app-initial" aria-hidden="true">
-              {gm ? <Icon name="crown" /> : initial}
-            </span>
+            {player?.personalityCode ? (
+              <Avatar player={player} />
+            ) : (
+              <span className="app-initial" aria-hidden="true">
+                {gm ? <Icon name="crown" /> : initial}
+              </span>
+            )}
             <span className="app-account-name">{displayName}</span>
             <span className="app-account-chevron">
               <Icon name="chev" />

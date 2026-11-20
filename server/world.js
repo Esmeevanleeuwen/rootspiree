@@ -5,6 +5,7 @@ import {
   emptyJourney,
   exerciseSteps,
   houseCandidates,
+  typeCode,
   typePreferences,
 } from "../src/game.js";
 import { ApiError } from "./http.js";
@@ -29,7 +30,8 @@ export function setupWorld(db) {
       account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
       bio TEXT NOT NULL DEFAULT '',
       journey TEXT,
-      type_scores TEXT
+      type_scores TEXT,
+      share_personality INTEGER NOT NULL DEFAULT 0 CHECK (share_personality IN (0, 1))
     );
     CREATE TABLE IF NOT EXISTS world_npcs (
       id TEXT PRIMARY KEY,
@@ -70,7 +72,7 @@ export function setupWorld(db) {
       PRIMARY KEY (post_id, account_id)
     );
   `);
-  addQuestAuthoringColumns(db);
+  updateWorldSchema(db);
   const npc = examples.players.find((player) => player.npc);
   db.prepare(
     `
@@ -80,7 +82,7 @@ export function setupWorld(db) {
   ).run(npc.id, npc.name, npc.role, npc.av, npc.desc);
 }
 
-function addQuestAuthoringColumns(db) {
+function updateWorldSchema(db) {
   db.exec("BEGIN IMMEDIATE");
   try {
     const columns = new Set(
@@ -98,6 +100,16 @@ function addQuestAuthoringColumns(db) {
     for (const [name, type] of Object.entries(additions)) {
       if (!columns.has(name))
         db.exec(`ALTER TABLE world_quests ADD COLUMN ${name} ${type}`);
+    }
+    const hasSharing = db
+      .prepare("PRAGMA table_info(world_profiles)")
+      .all()
+      .some(({ name }) => name === "share_personality");
+    if (!hasSharing) {
+      db.exec(`
+        ALTER TABLE world_profiles ADD COLUMN share_personality
+          INTEGER NOT NULL DEFAULT 0 CHECK (share_personality IN (0, 1))
+      `);
     }
     db.exec("COMMIT");
   } catch (error) {
@@ -240,18 +252,30 @@ async function readPlayers(db, account) {
   const users = await db
     .prepare(
       `
-    SELECT accounts.id, accounts.name, p.bio, p.journey, p.type_scores
+    SELECT accounts.id, accounts.name, p.bio, p.journey, p.type_scores, p.share_personality,
+      CASE WHEN accounts.id = ? OR p.share_personality = 1
+        THEN accounts.type_scores
+      END AS current_type_scores
     FROM accounts
     LEFT JOIN world_profiles p ON p.account_id = accounts.id
     WHERE accounts.role = 'player' AND accounts.onboarding_complete = 1
     ORDER BY accounts.created_at, accounts.id
   `,
     )
-    .all();
+    .all(account.id);
   const players = users.map((row) => {
+    const own = row.id === account.id;
+    const scores = JSON.parse(row.current_type_scores);
+    const personalityCode =
+      Array.isArray(scores) &&
+      traits.every(
+        (_, index) => Number.isFinite(scores[index]) && scores[index] !== 0,
+      )
+        ? typeCode(scores)
+        : null;
     let journey;
-    if (row.id === account.id) {
-      journey = ownJourney(row, account.typeScores);
+    if (own) {
+      journey = ownJourney(row, scores);
     } else {
       const stored = JSON.parse(row.journey ?? "null");
       const shared =
@@ -277,6 +301,8 @@ async function readPlayers(db, account) {
       desc: row.bio ?? "",
       registered: true,
       journey,
+      ...(personalityCode && { personalityCode }),
+      ...(own && { sharePersonality: row.share_personality === 1 }),
     };
   });
   const npcs = await db
@@ -397,6 +423,19 @@ async function saveProfile(db, account, body) {
   `,
     )
     .run(account.id, bio);
+}
+
+async function savePersonalitySharing(db, account, body) {
+  requirePlayer(account);
+  requireInput(typeof body.shared === "boolean");
+  await db
+    .prepare(
+      `
+    INSERT INTO world_profiles (account_id, share_personality) VALUES (?, ?)
+    ON CONFLICT(account_id) DO UPDATE SET share_personality = excluded.share_personality
+  `,
+    )
+    .run(account.id, Number(body.shared));
 }
 
 async function saveJourney(db, account, body) {
@@ -680,6 +719,7 @@ async function addExercise(db, account, body) {
 
 const actions = new Map([
   ["bio", saveProfile],
+  ["personalitySharing", savePersonalitySharing],
   ["journey", saveJourney],
   ["like", toggleVote],
   ["post", addPost],

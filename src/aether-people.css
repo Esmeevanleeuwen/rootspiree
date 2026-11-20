@@ -143,6 +143,25 @@
   color: var(--color-warning);
 }
 
+.character-role {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.character-type-code {
+  border-radius: var(--radius-pill);
+  padding: 0.12rem var(--space-2);
+  background: var(--color-surface-raised);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
 .character-bio {
   margin-bottom: auto;
   min-height: 3.25rem;

@@ -173,6 +173,8 @@ export function GameProvider({ account, onAccount, onExpired, children }) {
         syncWarning,
         setModal,
         mutate,
+        setPersonalitySharing: (shared) =>
+          mutate("personalitySharing", { shared }),
         editJourney,
         stage,
         navigate,
