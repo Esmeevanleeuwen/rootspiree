@@ -191,6 +191,19 @@
   font-size: var(--font-size-sm);
 }
 
+.personality-source-link {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-height: var(--control-height);
+  padding: var(--space-1) 0;
+  color: var(--report-ink);
+  font-size: var(--font-size-sm);
+  text-decoration: underline;
+  text-underline-offset: 0.17em;
+}
+
 .personality-body {
   display: grid;
   gap: var(--space-4);
@@ -217,6 +230,10 @@
 .personality-panel p {
   max-width: 70ch;
   line-height: 1.65;
+}
+
+.personality-panel p + p {
+  margin-block-start: var(--space-3);
 }
 
 .personality-muted {

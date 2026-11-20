@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import { statements } from "../content.js";
 import { useI18n } from "../i18n.jsx";
@@ -15,13 +15,14 @@ import {
 import { LanguageSelector, QuizForm } from "./Entry.jsx";
 import { GameTopBar } from "./GameNavigation.jsx";
 import { Journey, JourneyDialog } from "./Journey.jsx";
-import { PersonalityResult } from "./PersonalityResult.jsx";
 import { BioDialog, Profile } from "./Profile.jsx";
 import { QuestEditor } from "./QuestEditor.jsx";
 import { WorldGuide } from "./WorldGuide.jsx";
 import { Button, Heading } from "./ui.jsx";
 import "../workspace.css";
 import "../workspace-status.css";
+
+const PersonalityResult = lazy(() => import("./PersonalityResult.jsx"));
 
 function AdminAccounts({ words }) {
   const [state, setState] = useState({ accounts: null, error: false });
@@ -301,12 +302,14 @@ export function GameWorkspace({ language, setLanguage, onLogout, authError }) {
     profile: gm ? null : <Profile personalAnswers={account.profile} />,
     test: !gm ? <Retake words={words} language={language} /> : null,
     quizResult: hasResult ? (
-      <PersonalityResult
-        scores={resultScores}
-        onContinue={continueAfterQuiz}
-        onProfile={() => navigate("profile")}
-        onRetake={() => navigate("test")}
-      />
+      <Suspense fallback={<p role="status">{words.loading}</p>}>
+        <PersonalityResult
+          scores={resultScores}
+          onContinue={continueAfterQuiz}
+          onProfile={() => navigate("profile")}
+          onRetake={() => navigate("test")}
+        />
+      </Suspense>
     ) : (
       <>
         <Heading title={t("Mijn persoonlijkheidstest")} />

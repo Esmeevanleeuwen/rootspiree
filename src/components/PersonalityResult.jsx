@@ -1,10 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { quizScoreLimit, traits as typeTraits } from "../content.js";
 import { useI18n } from "../i18n.jsx";
+import { personalityDetails } from "../personality-details.js";
 import { reportCopy } from "../personality-report-copy.js";
 import { personalityPortraits } from "../personality-portraits.js";
 import {
   describePersonality,
+  officialTypeUrl,
   personalityProfiles,
   profileFamilies,
 } from "../personality-reports.js";
@@ -88,7 +90,12 @@ function ReportSection({ id, title, children }) {
   );
 }
 
-export function PersonalityResult({ scores, onContinue, onProfile, onRetake }) {
+export default function PersonalityResult({
+  scores,
+  onContinue,
+  onProfile,
+  onRetake,
+}) {
   const { language } = useI18n();
   const words = reportCopy[language];
   const heading = useRef(null);
@@ -96,6 +103,8 @@ export function PersonalityResult({ scores, onContinue, onProfile, onRetake }) {
   const result = describePersonality(scores);
   const profileCode = previewCode || result.code;
   const profile = personalityProfiles[profileCode]?.[language];
+  const details = personalityDetails[profileCode]?.[language];
+  const officialUrl = officialTypeUrl(profileCode, language);
   const family = Object.keys(profileFamilies).find((key) =>
     profileFamilies[key].includes(profileCode),
   );
@@ -115,6 +124,12 @@ export function PersonalityResult({ scores, onContinue, onProfile, onRetake }) {
       return offset === -1 ? null : words.poles[index * 2 + offset];
     })
     .filter(Boolean);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    heading.current?.focus({ preventScroll: true });
+  }, []);
+
   function selectType(code) {
     setPreviewCode(code === result.code ? "" : code);
     requestAnimationFrame(() => {
@@ -205,6 +220,17 @@ export function PersonalityResult({ scores, onContinue, onProfile, onRetake }) {
                 </optgroup>
               ))}
             </select>
+            {officialUrl && (
+              <a
+                className="personality-source-link"
+                href={officialUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {words.externalReport(profileCode)}{" "}
+                <span aria-hidden="true">↗</span>
+              </a>
+            )}
           </div>
         </aside>
 
@@ -212,6 +238,7 @@ export function PersonalityResult({ scores, onContinue, onProfile, onRetake }) {
           {profile && (
             <ReportSection id="intro" title={words.intro}>
               <p>{profile.introduction}</p>
+              <p>{details.introduction}</p>
             </ReportSection>
           )}
           {!previewCode && <TraitBreakdown scores={scores} words={words} />}
@@ -223,10 +250,12 @@ export function PersonalityResult({ scores, onContinue, onProfile, onRetake }) {
                   <div>
                     <h3>{words.assertive}</h3>
                     <p>{words.assertiveDetails}</p>
+                    <p>{details.assertive}</p>
                   </div>
                   <div>
                     <h3>{words.turbulent}</h3>
                     <p>{words.turbulentDetails}</p>
+                    <p>{details.turbulent}</p>
                   </div>
                 </div>
               </ReportSection>
@@ -242,6 +271,7 @@ export function PersonalityResult({ scores, onContinue, onProfile, onRetake }) {
                         {profile[key].map((item) => (
                           <li key={item}>{item}</li>
                         ))}
+                        <li>{details[key]}</li>
                       </ul>
                     </div>
                   ))}
@@ -250,6 +280,7 @@ export function PersonalityResult({ scores, onContinue, onProfile, onRetake }) {
               {topics.map((id) => (
                 <ReportSection key={id} id={id} title={words[id]}>
                   <p>{profile[id]}</p>
+                  <p>{details[id]}</p>
                 </ReportSection>
               ))}
             </>

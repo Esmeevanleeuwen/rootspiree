@@ -16,6 +16,14 @@ export const profileFamilies = {
 
 export const profileCodes = Object.values(profileFamilies).flat();
 
+export function officialTypeUrl(code, language) {
+  if (!profileCodes.includes(code)) return null;
+  const slug = code.toLowerCase();
+  const path =
+    language === "nl" ? `/nl/${slug}-persoonlijkheid` : `/${slug}-personality`;
+  return "https://www.16personalities.com" + path;
+}
+
 export function describePersonality(scores) {
   const code = typeCode(scores);
   const profile = personalityProfiles[code] ?? null;

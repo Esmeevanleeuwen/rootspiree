@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { agreement, quizScoreLimit, statements } from "../src/content.js";
+import { personalityDetails } from "../src/personality-details.js";
 import {
   describePersonality,
+  officialTypeUrl,
   personalityProfiles,
   profileCodes,
 } from "../src/personality-reports.js";
@@ -131,6 +133,45 @@ test("het persoonlijkheidsrapport toont alle types en bewaart gemengde uitslagen
   assert.equal(blended.displayCode, "INXJ");
   assert.deepEqual(blended.matches, ["INTJ", "INFJ"]);
   assert.deepEqual(describePersonality([0, 0, 0, 0, 0]).matches, profileCodes);
+});
+
+test("elk type heeft uitgebreide teksten en de juiste bronlink in beide talen", () => {
+  assert.deepEqual(
+    Object.keys(personalityDetails).sort(),
+    [...profileCodes].sort(),
+  );
+  const sections = [
+    "introduction",
+    "strengths",
+    "challenges",
+    "assertive",
+    "turbulent",
+    "romance",
+    "friends",
+    "parenting",
+    "careers",
+    "workplace",
+    "conclusion",
+  ];
+  for (const code of profileCodes) {
+    const slug = code.toLowerCase();
+    for (const language of ["en", "nl"]) {
+      const detail = personalityDetails[code][language];
+      for (const section of sections) {
+        assert.ok(detail[section]?.trim(), `${code} ${language} ${section}`);
+      }
+      const path =
+        language === "nl"
+          ? `/nl/${slug}-persoonlijkheid`
+          : `/${slug}-personality`;
+      assert.equal(
+        officialTypeUrl(code, language),
+        "https://www.16personalities.com" + path,
+      );
+    }
+  }
+  assert.equal(officialTypeUrl("INXJ", "en"), null);
+  assert.equal(officialTypeUrl("INTJ-A", "en"), null);
 });
 
 test("registratie maakt één zelfstandig profiel en controleert een dubbele naam", () => {
