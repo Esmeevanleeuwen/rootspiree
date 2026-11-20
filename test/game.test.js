@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { agreement, quizScoreLimit, statements } from "../src/content.js";
-import { addedStatements } from "../src/personality-questions.js";
 import {
   describePersonality,
   personalityProfiles,
@@ -16,12 +15,14 @@ import {
   typeCode,
   typePreferences,
 } from "../src/game.js";
+import { quizPageCount, restoreQuizDraft } from "../src/quiz-draft.js";
 
 test("de zestig aangeleverde vragen staan in volgorde en komen één keer voor", () => {
-  const english = addedStatements.map(([, , sentence]) => sentence);
-  assert.equal(statements.length, 76);
+  const english = statements.map(([, , sentence]) => sentence);
   assert.equal(english.length, 60);
   assert.equal(new Set(english).size, 60);
+  assert.equal(quizPageCount, 10);
+  assert.equal(english[0], "You regularly make new friends.");
   assert.equal(
     english[42],
     "You can easily connect with people you have just met.",
@@ -34,6 +35,39 @@ test("de zestig aangeleverde vragen staan in volgorde en komen één keer voor",
     english[54],
     "Even a small mistake can cause you to doubt your overall abilities and knowledge.",
   );
+  assert.equal(
+    english[59],
+    "You feel confident that things will work out for you.",
+  );
+});
+
+test("opgeslagen quizantwoorden blijven bij de juiste stellingen na de update", () => {
+  const original = Array(16).fill(6);
+  const complete = statements.map((_, index) => index % agreement.length);
+  const withGap = [...complete.slice(0, 42), ...complete.slice(54)];
+  const inProgress = [...complete.slice(0, 24), ...Array(36).fill(null)];
+  assert.deepEqual(restoreQuizDraft({ answers: original }), {
+    page: 0,
+    answers: Array(60).fill(null),
+  });
+  assert.deepEqual(restoreQuizDraft({ answers: [...original, ...withGap] }), {
+    page: 7,
+    answers: [
+      ...complete.slice(0, 42),
+      ...Array(12).fill(null),
+      ...complete.slice(54),
+    ],
+  });
+  assert.deepEqual(restoreQuizDraft({ answers: [...original, ...inProgress] }), {
+    page: 4,
+    answers: inProgress,
+  });
+  assert.deepEqual(restoreQuizDraft({ answers: [...original, ...complete] }), {
+    page: 9,
+    answers: complete,
+  });
+  const current = { page: 2, answers: inProgress };
+  assert.deepEqual(restoreQuizDraft(current), current);
 });
 
 test("alle zestien typen en neutrale uitkomsten worden correct berekend", () => {

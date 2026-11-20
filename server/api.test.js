@@ -140,6 +140,13 @@ test("separate player and admin accounts, ordered onboarding, sessions across re
   assert.equal(response.data.account.onboardingComplete, true);
   const scores = [0, 0, 0, 0, quizScoreLimit];
   assert.deepEqual(response.data.account.typeScores, scores);
+  const staleTab = await req("onboarding", {
+    method: "POST",
+    cookie,
+    body: { answers: [...Array(16).fill(0), ...answers] },
+  });
+  assert.equal(staleTab.status, 200);
+  assert.deepEqual(staleTab.data.account.typeScores, scores);
 
   const signedIn = await req("login", {
     method: "POST",

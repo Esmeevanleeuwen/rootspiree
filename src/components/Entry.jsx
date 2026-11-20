@@ -1,7 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { api } from "../api.js";
-import { agreement, originalQuizLength, statements } from "../content.js";
+import { agreement, statements } from "../content.js";
 import { translate } from "../i18n.jsx";
+import {
+  quizPageCount as pageCount,
+  quizPageSize as pageSize,
+  restoreQuizDraft,
+} from "../quiz-draft.js";
 import { BrandLockup, Button, Field, Icon } from "./ui.jsx";
 import { LandingNavigation, LandingPage } from "./LandingPage.jsx";
 import "../entry.css";
@@ -116,11 +121,6 @@ const errors = {
 };
 
 const profileFields = ["hobbies", "job", "goals", "interests"];
-const pageSize = 6;
-const pageCount = Math.ceil(statements.length / pageSize);
-const previousQuizLength = originalQuizLength + 48;
-// The previous draft jumps from supplied statement 42 to 55.
-const previousQuizGapIndex = originalQuizLength + 42;
 
 export function LanguageSelector({ language, setLanguage }) {
   const strings = copy[language];
@@ -494,51 +494,15 @@ function loadProfileDraft(account) {
     : { fields: saved, restored: false };
 }
 
-function loadQuizDraft(accountId) {
-  const empty = { page: 0, answers: Array(statements.length).fill(null) };
-  const draft = readEntryDraft("quiz", accountId);
-  if (
-    !Array.isArray(draft?.answers) ||
-    ![originalQuizLength, previousQuizLength, statements.length].includes(
-      draft.answers.length,
-    ) ||
-    draft.answers.some(
-      (answer) =>
-        answer !== null &&
-        (!Number.isInteger(answer) || answer < 0 || answer >= agreement.length),
-    )
-  )
-    return empty;
-
-  if (draft.answers.length !== statements.length) {
-    const insertionIndex =
-      draft.answers.length === originalQuizLength
-        ? originalQuizLength
-        : previousQuizGapIndex;
-    const answers = [
-      ...draft.answers.slice(0, insertionIndex),
-      ...Array(statements.length - draft.answers.length).fill(null),
-      ...draft.answers.slice(insertionIndex),
-    ];
-    return { answers, page: Math.floor(answers.indexOf(null) / pageSize) };
-  }
-  if (
-    !Number.isInteger(draft.page) ||
-    draft.page < 0 ||
-    draft.page >= pageCount ||
-    draft.answers.slice(0, draft.page * pageSize).includes(null)
-  )
-    return empty;
-  return draft;
-}
-
 function Onboarding({ account, language, strings, onAccount, go }) {
   const [initialProfile] = useState(() => loadProfileDraft(account));
   const [profile, setProfile] = useState(initialProfile.fields);
   const [step, setStep] = useState(
     account.profileComplete && !initialProfile.restored ? "quiz" : "profile",
   );
-  const [draft, setDraft] = useState(() => loadQuizDraft(account.id));
+  const [draft, setDraft] = useState(() =>
+    restoreQuizDraft(readEntryDraft("quiz", account.id)),
+  );
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const submitLock = useRef(false);

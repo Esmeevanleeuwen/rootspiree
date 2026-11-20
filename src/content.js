@@ -1,4 +1,4 @@
-import { addedStatements } from "./personality-questions.js";
+export { statements } from "./personality-questions.js";
 
 export const houses = {
   nacht: {
@@ -308,55 +308,6 @@ export const quizTraits = [
 ];
 
 export const quizScoreLimit = 12;
-
-const originalStatements = [
-  ["E", "Na een middag alleen zoek ik graag gezelschap op."],
-  ["S", "Als ik iets nieuws leer, wil ik eerst een uitgewerkt voorbeeld zien."],
-  [
-    "F",
-    "Bij een lastige keuze vraag ik eerst wat de uitkomst betekent voor de betrokken mensen.",
-  ],
-  ["P", "Ik begin graag aan een vrije middag zonder te weten waar ik uitkom."],
-  ["I", "Na een drukke dag met anderen laad ik graag in mijn eentje op."],
-  [
-    "N",
-    "Als ik iets nieuws hoor, denk ik al snel aan wat er nog meer mogelijk is.",
-  ],
-  [
-    "T",
-    "Als twee voorstellen aantrekkelijk zijn, vergelijk ik ze eerst op dezelfde criteria.",
-  ],
-  [
-    "J",
-    "Bij een nieuwe opdracht bedenk ik graag vooraf in welke volgorde ik werk.",
-  ],
-  ["E", "Een idee krijgt voor mij vorm terwijl ik er met iemand over praat."],
-  [
-    "N",
-    "Tijdens het lezen vallen mij vaak verbanden tussen verschillende verhalen op.",
-  ],
-  [
-    "F",
-    "Bij een meningsverschil weegt voor mij zwaar wat ieder persoonlijk belangrijk vindt.",
-  ],
-  ["J", "Ik spreek graag vandaag al af wanneer we de volgende stap zetten."],
-  ["I", "In een groep denk ik graag eerst in stilte na over mijn antwoord."],
-  [
-    "S",
-    "Bij het navertellen van een gebeurtenis begin ik vaak met wat ik precies zag of hoorde.",
-  ],
-  [
-    "T",
-    "Bij een moeilijke beslissing zoek ik eerst naar een redenering die ik stap voor stap kan uitleggen.",
-  ],
-  [
-    "P",
-    "Als ik aan iets werk, laat ik de volgorde graag afhangen van wat ik onderweg ontdek.",
-  ],
-];
-
-export const originalQuizLength = originalStatements.length;
-export const statements = [...originalStatements, ...addedStatements];
 
 export const agreement = [
   "Helemaal oneens",

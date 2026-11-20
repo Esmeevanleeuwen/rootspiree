@@ -1,4 +1,7 @@
-export const addedStatements = [
+export const legacyQuizPrefixLength = 16;
+export const legacyFullQuizLength = 76;
+
+export const statements = [
   [
     "E",
     "Je maakt regelmatig nieuwe vrienden.",

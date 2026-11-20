@@ -1,5 +1,9 @@
 import { scoreTest } from "../src/game.js";
 import {
+  legacyFullQuizLength,
+  legacyQuizPrefixLength,
+} from "../src/personality-questions.js";
+import {
   accountForSession,
   authenticate,
   createPlayer,
@@ -52,9 +56,14 @@ async function saveProfile(db, account, body) {
 async function finishQuiz(db, account, answers) {
   if (!account.profileComplete) throw new ApiError(409, "profile_required");
   if (!Array.isArray(answers)) throw new ApiError(400, "invalid_answers");
+  // A tab opened before the update may still submit the old question list.
+  const currentAnswers =
+    answers.length === legacyFullQuizLength
+      ? answers.slice(legacyQuizPrefixLength)
+      : answers;
   let scores;
   try {
-    scores = scoreTest(answers);
+    scores = scoreTest(currentAnswers);
   } catch {
     throw new ApiError(400, "invalid_answers");
   }

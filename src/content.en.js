@@ -1,37 +1,5 @@
 export const contentEnglish = {
-  // Join and retake quiz
-  "Na een middag alleen zoek ik graag gezelschap op.":
-    "After spending an afternoon alone, I like to seek out company.",
-  "Als ik iets nieuws leer, wil ik eerst een uitgewerkt voorbeeld zien.":
-    "When I learn something new, I like to see a worked example first.",
-  "Bij een lastige keuze vraag ik eerst wat de uitkomst betekent voor de betrokken mensen.":
-    "When facing a difficult choice, I first ask what the outcome would mean for the people involved.",
-  "Ik begin graag aan een vrije middag zonder te weten waar ik uitkom.":
-    "I like to start a free afternoon without knowing where I’ll end up.",
-  "Na een drukke dag met anderen laad ik graag in mijn eentje op.":
-    "After a busy day with other people, I like to recharge on my own.",
-  "Als ik iets nieuws hoor, denk ik al snel aan wat er nog meer mogelijk is.":
-    "When I hear something new, I quickly start thinking about what else might be possible.",
-  "Als twee voorstellen aantrekkelijk zijn, vergelijk ik ze eerst op dezelfde criteria.":
-    "When two proposals both appeal to me, I first compare them using the same criteria.",
-  "Bij een nieuwe opdracht bedenk ik graag vooraf in welke volgorde ik werk.":
-    "When I start a new quest, I like to plan the order of my work in advance.",
-  "Een idee krijgt voor mij vorm terwijl ik er met iemand over praat.":
-    "An idea takes shape for me when I talk it through with someone.",
-  "Tijdens het lezen vallen mij vaak verbanden tussen verschillende verhalen op.":
-    "When I read, I often notice connections between different stories.",
-  "Bij een meningsverschil weegt voor mij zwaar wat ieder persoonlijk belangrijk vindt.":
-    "When people disagree, I put a lot of weight on what matters personally to each of them.",
-  "Ik spreek graag vandaag al af wanneer we de volgende stap zetten.":
-    "I like to agree today on when we’ll take the next step.",
-  "In een groep denk ik graag eerst in stilte na over mijn antwoord.":
-    "In a group, I prefer to think through my answer quietly before speaking.",
-  "Bij het navertellen van een gebeurtenis begin ik vaak met wat ik precies zag of hoorde.":
-    "When I retell an event, I often start with exactly what I saw or heard.",
-  "Bij een moeilijke beslissing zoek ik eerst naar een redenering die ik stap voor stap kan uitleggen.":
-    "When facing a difficult decision, I first look for reasoning I can explain step by step.",
-  "Als ik aan iets werk, laat ik de volgorde graag afhangen van wat ik onderweg ontdek.":
-    "When I work on something, I like to let what I discover along the way determine the order.",
+  // Quiz answer scale
   "Helemaal oneens": "Strongly disagree",
   Oneens: "Disagree",
   "Een beetje oneens": "Somewhat disagree",
